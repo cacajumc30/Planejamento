@@ -529,7 +529,7 @@
         <button class="tab-button" data-tab="tab5">💰 Orçamentos</button>
         <button class="tab-button" data-tab="tab6">📝 Relatório de Ativiades</button>
     </div>
-
+    
     <div class="tab-content" id="tabContent">
         <!-- Aba 1: Equipe Feijó -->
         <div class="tab-pane active" id="tab1">
