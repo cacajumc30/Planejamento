@@ -405,7 +405,7 @@
 </head>
 <body>
 <div class="container">
-    <h1>📋 Dashboard de Planejamento Pessoal</h1>
+    <h1>📋 Planejamento Equipe Feijó</h1>
 
     <!-- Barra de backup/restauração -->
     <div class="backup-bar">
@@ -417,18 +417,18 @@
 
     <!-- Abas -->
     <div class="tabs" id="tabs">
-        <button class="tab-button active" data-tab="tab1">📌 Planejamento (Eisenhower)</button>
+        <button class="tab-button active" data-tab="tab1">📌 Planejamento Equipe Feijó</button>
         <button class="tab-button" data-tab="tab2">🔄 Tarefas Rotineiras</button>
         <button class="tab-button" data-tab="tab3">📅 Agenda</button>
         <button class="tab-button" data-tab="tab4">📊 Relatório</button>
         <button class="tab-button" data-tab="tab5">💰 Orçamentos</button>
-        <button class="tab-button" data-tab="tab6">📝 Relatos</button>
+        <button class="tab-button" data-tab="tab6">📝 Relatórios de Atividades</button>
     </div>
 
     <div class="tab-content" id="tabContent">
-        <!-- Aba 1: Eisenhower -->
+        <!-- Aba 1: Equipe Feijó -->
         <div class="tab-pane active" id="tab1">
-            <h2>Matriz de Eisenhower</h2>
+            <h2>Prioridade Equipe Feijó</h2>
             <div class="form-expander">
                 <h3>➕ Adicionar nova atividade</h3>
                 <div class="form-grid">
