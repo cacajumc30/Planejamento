@@ -9,7 +9,7 @@
     <!-- Font Awesome -->
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
     <style>
-        /* (mesmos estilos das respostas anteriores, mantidos por economia de espaço) */
+        /* (mesmos estilos das versões anteriores) */
         * {
             box-sizing: border-box;
             font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
@@ -68,7 +68,6 @@
         #file-import {
             display: none;
         }
-        /* demais estilos continuam iguais */
         .tabs {
             display: flex;
             flex-wrap: wrap;
@@ -401,11 +400,42 @@
             font-size: 11px;
             color: #2c3e50;
         }
+        .relato-item {
+            background: #f8f9fa;
+            border-radius: 8px;
+            padding: 15px;
+            margin-bottom: 15px;
+            border-left: 5px solid #17a2b8;
+            position: relative;
+        }
+        .relato-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 10px;
+            flex-wrap: wrap;
+        }
+        .relato-header h4 {
+            margin: 0;
+            color: #17a2b8;
+        }
+        .copy-btn {
+            background: #6c757d;
+            color: white;
+            border: none;
+            padding: 4px 10px;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 12px;
+        }
+        .copy-btn:hover {
+            background: #5a6268;
+        }
     </style>
 </head>
 <body>
 <div class="container">
-    <h1>📋 Planejamento Equipe Feijó</h1>
+    <h1>📋 Dashboard de Planejamento Pessoal</h1>
 
     <!-- Barra de backup/restauração -->
     <div class="backup-bar">
@@ -417,18 +447,18 @@
 
     <!-- Abas -->
     <div class="tabs" id="tabs">
-        <button class="tab-button active" data-tab="tab1">📌 Planejamento Equipe Feijó</button>
+        <button class="tab-button active" data-tab="tab1">📌 Planejamento (Eisenhower)</button>
         <button class="tab-button" data-tab="tab2">🔄 Tarefas Rotineiras</button>
         <button class="tab-button" data-tab="tab3">📅 Agenda</button>
         <button class="tab-button" data-tab="tab4">📊 Relatório</button>
         <button class="tab-button" data-tab="tab5">💰 Orçamentos</button>
-        <button class="tab-button" data-tab="tab6">📝 Relatórios de Atividades</button>
+        <button class="tab-button" data-tab="tab6">📝 Relatos</button>
     </div>
 
     <div class="tab-content" id="tabContent">
-        <!-- Aba 1: Equipe Feijó -->
+        <!-- Aba 1: Eisenhower -->
         <div class="tab-pane active" id="tab1">
-            <h2>Prioridade Equipe Feijó</h2>
+            <h2>Matriz de Eisenhower</h2>
             <div class="form-expander">
                 <h3>➕ Adicionar nova atividade</h3>
                 <div class="form-grid">
@@ -602,21 +632,48 @@
             </div>
         </div>
 
-        <!-- Aba 6: Relatos -->
+        <!-- Aba 6: Relatos (MODIFICADA) -->
         <div class="tab-pane" id="tab6">
             <h2>Relatos de Atividades</h2>
             <div class="form-expander">
                 <h3>➕ Adicionar relato</h3>
                 <div class="form-grid">
-                    <div class="form-group"><label>Objetivo</label><input type="text" id="rel-objetivo"></div>
-                    <div class="form-group"><label>Data</label><input type="date" id="rel-data"></div>
-                    <div class="form-group"><label>Povo</label><input type="text" id="rel-povo"></div>
-                    <div class="form-group"><label>Pessoas</label><input type="number" id="rel-pessoas" min="1"></div>
-                    <div class="form-group"><label>Alcançado?</label>
-                        <select id="rel-alcancado"><option value="Sim">Sim</option><option value="Não">Não</option></select>
+                    <!-- Novo campo: Atividade -->
+                    <div class="form-group">
+                        <label>Atividade</label>
+                        <input type="text" id="rel-atividade" placeholder="Ex: Reunião, Visita, etc.">
                     </div>
-                    <div class="form-group"><label>Desafios</label><input type="text" id="rel-desafios"></div>
-                    <div class="form-group"><label>Pontos importantes</label><input type="text" id="rel-pontos"></div>
+                    <div class="form-group">
+                        <label>Objetivo</label>
+                        <input type="text" id="rel-objetivo">
+                    </div>
+                    <div class="form-group">
+                        <label>Data</label>
+                        <input type="date" id="rel-data">
+                    </div>
+                    <div class="form-group">
+                        <label>Povo</label>
+                        <input type="text" id="rel-povo">
+                    </div>
+                    <div class="form-group">
+                        <label>Pessoas</label>
+                        <input type="number" id="rel-pessoas" min="1">
+                    </div>
+                    <div class="form-group">
+                        <label>Alcançado?</label>
+                        <select id="rel-alcancado">
+                            <option value="Sim">Sim</option>
+                            <option value="Não">Não</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label>Desafios</label>
+                        <input type="text" id="rel-desafios">
+                    </div>
+                    <div class="form-group">
+                        <label>Pontos importantes</label>
+                        <input type="text" id="rel-pontos">
+                    </div>
                 </div>
                 <button onclick="adicionarRelato()">Salvar</button>
             </div>
@@ -750,7 +807,6 @@
             }
         };
         reader.readAsText(file);
-        // Limpar input para permitir re-importar o mesmo arquivo
         event.target.value = '';
     }
 
@@ -1219,9 +1275,11 @@
         }
     }
 
-    // ==================== RELATOS ====================
+    // ==================== RELATOS (MODIFICADO) ====================
     function adicionarRelato() {
+        const atividade = document.getElementById('rel-atividade').value.trim();
         const objetivo = document.getElementById('rel-objetivo').value.trim();
+        if (!atividade) return alert('Campo Atividade é obrigatório');
         if (!objetivo) return alert('Objetivo é obrigatório');
         const data = document.getElementById('rel-data').value;
         const povo = document.getElementById('rel-povo').value;
@@ -1229,8 +1287,10 @@
         const alcancado = document.getElementById('rel-alcancado').value;
         const desafios = document.getElementById('rel-desafios').value;
         const pontos = document.getElementById('rel-pontos').value;
+
         relatosAtividades.push({
             id: Date.now() + Math.random(),
+            atividade,
             objetivo,
             data,
             povo,
@@ -1241,6 +1301,8 @@
         });
         salvarDados();
         renderizarRelatos();
+        // Limpar campos
+        document.getElementById('rel-atividade').value = '';
         document.getElementById('rel-objetivo').value = '';
         document.getElementById('rel-povo').value = '';
         document.getElementById('rel-pessoas').value = '';
@@ -1250,9 +1312,31 @@
     }
 
     function removerRelato(id) {
-        relatosAtividades = relatosAtividades.filter(i => i.id != id);
-        salvarDados();
-        renderizarRelatos();
+        if (confirm('Tem certeza que deseja excluir este relato?')) {
+            relatosAtividades = relatosAtividades.filter(i => i.id != id);
+            salvarDados();
+            renderizarRelatos();
+        }
+    }
+
+    function copiarRelato(id) {
+        const relato = relatosAtividades.find(i => i.id == id);
+        if (!relato) return;
+
+        const texto = `Atividade: ${relato.atividade}
+Objetivo: ${relato.objetivo}
+Data: ${formatarData(relato.data)}
+Povo: ${relato.povo}
+Pessoas: ${relato.pessoas}
+Alcançado: ${relato.alcancado}
+Desafios: ${relato.desafios || ''}
+Pontos importantes: ${relato.pontos || ''}`;
+
+        navigator.clipboard.writeText(texto).then(() => {
+            alert('Relato copiado para a área de transferência!');
+        }).catch(() => {
+            alert('Erro ao copiar. Tente novamente.');
+        });
     }
 
     function renderizarRelatos() {
@@ -1264,12 +1348,15 @@
         }
         let html = '';
         relatosAtividades.sort((a,b) => b.data.localeCompare(a.data)).forEach(rel => {
-            html += `<div style="background:#f8f9fa; padding:15px; border-radius:8px; margin-bottom:15px;">`;
-            html += `<div style="display:flex; justify-content:space-between;">`;
-            html += `<strong>${rel.objetivo}</strong> <span>${formatarData(rel.data)}</span>`;
-            html += `<button class="btn-small" onclick="removerRelato(${rel.id})">🗑️</button>`;
+            html += `<div class="relato-item">`;
+            html += `<div class="relato-header">`;
+            html += `<h4>${rel.atividade} - ${rel.objetivo}</h4>`;
+            html += `<div>`;
+            html += `<button class="copy-btn" onclick="copiarRelato(${rel.id})"><i class="fas fa-copy"></i> Copiar</button>`;
+            html += `<button class="btn-small" onclick="removerRelato(${rel.id})" style="margin-left:5px;">🗑️</button>`;
             html += `</div>`;
-            html += `<p><strong>Povo:</strong> ${rel.povo} | <strong>Pessoas:</strong> ${rel.pessoas}</p>`;
+            html += `</div>`;
+            html += `<p><strong>Data:</strong> ${formatarData(rel.data)} | <strong>Povo:</strong> ${rel.povo} | <strong>Pessoas:</strong> ${rel.pessoas}</p>`;
             html += `<p><strong>Alcançado:</strong> ${rel.alcancado}</p>`;
             if (rel.desafios) html += `<p><strong>Desafios:</strong> ${rel.desafios}</p>`;
             if (rel.pontos) html += `<p><strong>Pontos importantes:</strong> ${rel.pontos}</p>`;
@@ -1278,6 +1365,7 @@
         lista.innerHTML = html;
     }
 
+    // Utilitário de formatação de data
     function formatarData(dataStr) {
         if (!dataStr) return '';
         const [ano, mes, dia] = dataStr.split('-');
