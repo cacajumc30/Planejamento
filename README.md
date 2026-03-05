@@ -507,7 +507,7 @@
             <option value="suellem">Suellem</option>
         </select>
         <button class="user-btn success" onclick="confirmarUsuario()">✅ Confirmar Entrada</button>
-        <button class="user-btn info" onclick="acessarInfoUsuario()">👤 Acessar Informações</button>
+        <button class="user-btn info" onclick="acessarInfoUsuario()">👤 Informações de Usuario</button>
         <button class="user-btn warning" onclick="visualizarEquipe()">👥 Equipe</button>
         <span class="user-status" id="user-status">Nenhum usuário ativo</span>
     </div>
