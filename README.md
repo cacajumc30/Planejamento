@@ -3,13 +3,13 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Dashboard de Planejamento Colaborativo</title>
+    <title>Dashboard de Planejamento Pessoal</title>
     <!-- Chart.js -->
     <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
     <!-- Font Awesome -->
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
     <style>
-        /* (mesmos estilos, mantidos) */
+        /* (mesmos estilos das respostas anteriores, mantidos por economia de espaço) */
         * {
             box-sizing: border-box;
             font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
@@ -26,57 +26,49 @@
         }
         h1 {
             color: #1e1e2f;
-            margin-bottom: 20px;
+            margin-bottom: 10px;
             font-weight: 600;
         }
-        .user-controls {
-            background: white;
-            border-radius: 8px;
-            padding: 15px 20px;
-            margin-bottom: 20px;
+        .backup-bar {
             display: flex;
-            gap: 20px;
+            gap: 15px;
+            margin-bottom: 20px;
+            padding: 10px;
+            background: #e9ecef;
+            border-radius: 8px;
             align-items: center;
             flex-wrap: wrap;
-            box-shadow: 0 2px 5px rgba(0,0,0,0.05);
         }
-        .user-controls label {
-            font-weight: 600;
-            color: #2c3e50;
-        }
-        .user-controls select, .user-controls input {
-            padding: 8px 12px;
-            border: 1px solid #ccc;
+        .backup-bar button {
+            background: #28a745;
+            color: white;
+            border: none;
+            padding: 8px 16px;
             border-radius: 5px;
+            cursor: pointer;
+            font-weight: 600;
+            font-size: 14px;
+            margin: 0;
+        }
+        .backup-bar button:hover {
+            background: #218838;
+        }
+        .backup-bar .import-label {
+            background: #007bff;
+            color: white;
+            padding: 8px 16px;
+            border-radius: 5px;
+            cursor: pointer;
+            font-weight: 600;
             font-size: 14px;
         }
-        .user-controls button {
-            background: #4361ee;
-            color: white;
-            border: none;
-            padding: 8px 16px;
-            border-radius: 5px;
-            cursor: pointer;
-            font-weight: 600;
+        .backup-bar .import-label:hover {
+            background: #0069d9;
         }
-        .view-toggle {
-            margin-left: auto;
-            display: flex;
-            gap: 10px;
+        #file-import {
+            display: none;
         }
-        .view-toggle button {
-            background: #e4e6eb;
-            color: #1e1e2f;
-            border: none;
-            padding: 8px 16px;
-            border-radius: 20px;
-            cursor: pointer;
-            font-weight: 600;
-        }
-        .view-toggle button.active {
-            background: #4361ee;
-            color: white;
-        }
+        /* demais estilos continuam iguais */
         .tabs {
             display: flex;
             flex-wrap: wrap;
@@ -409,50 +401,34 @@
             font-size: 11px;
             color: #2c3e50;
         }
-        .usuario-tag {
-            font-size: 11px;
-            background: #e9ecef;
-            padding: 2px 6px;
-            border-radius: 12px;
-            display: inline-block;
-            margin-right: 5px;
-        }
     </style>
 </head>
 <body>
 <div class="container">
-    <h1>📋 Planejamento Equipe Feijó</h1>
+    <h1>📋 Dashboard de Planejamento Pessoal</h1>
 
-    <!-- Controles de usuário e visualização -->
-    <div class="user-controls">
-        <label for="usuario-select">Usuário atual:</label>
-        <select id="usuario-select">
-            <option value="Ana">Suellem</option>
-            <option value="Bruno">Carlos</option>
-            
-        </select>
-        <input type="text" id="usuario-outro" placeholder="Digite seu nome" style="display:none;">
-        <button onclick="definirUsuario()">Definir</button>
-
-        <div class="view-toggle">
-            <button id="view-meus" class="active" onclick="setView('meus')">Meus dados</button>
-            <button id="view-equipe" onclick="setView('equipe')">Equipe</button>
-        </div>
+    <!-- Barra de backup/restauração -->
+    <div class="backup-bar">
+        <button onclick="exportarDados()"><i class="fas fa-download"></i> Exportar Dados</button>
+        <label for="file-import" class="import-label"><i class="fas fa-upload"></i> Importar Dados</label>
+        <input type="file" id="file-import" accept=".json" onchange="importarDados(event)">
+        <span style="color: #666; font-size: 14px;">Use para transferir dados entre dispositivos.</span>
     </div>
 
+    <!-- Abas -->
     <div class="tabs" id="tabs">
-        <button class="tab-button active" data-tab="tab1">📌 Planejamento Equipe Feijó</button>
+        <button class="tab-button active" data-tab="tab1">📌 Planejamento (Eisenhower)</button>
         <button class="tab-button" data-tab="tab2">🔄 Tarefas Rotineiras</button>
         <button class="tab-button" data-tab="tab3">📅 Agenda</button>
         <button class="tab-button" data-tab="tab4">📊 Relatório</button>
         <button class="tab-button" data-tab="tab5">💰 Orçamentos</button>
-        <button class="tab-button" data-tab="tab6">📝 Relatório de Atividades</button>
+        <button class="tab-button" data-tab="tab6">📝 Relatos</button>
     </div>
 
     <div class="tab-content" id="tabContent">
-        <!-- Aba 1: Equipe Feijó -->
+        <!-- Aba 1: Eisenhower -->
         <div class="tab-pane active" id="tab1">
-            <h2>Prioridades da Equipe</h2>
+            <h2>Matriz de Eisenhower</h2>
             <div class="form-expander">
                 <h3>➕ Adicionar nova atividade</h3>
                 <div class="form-grid">
@@ -556,7 +532,7 @@
             </div>
         </div>
 
-        <!-- Aba 5: Orçamentos (com gráfico de pizza) -->
+        <!-- Aba 5: Orçamentos -->
         <div class="tab-pane" id="tab5">
             <h2>Orçamentos de Atividades</h2>
             <div class="form-expander" id="novo-orcamento-form">
@@ -621,16 +597,8 @@
                 <div>💰 Total acumulado de todos os orçamentos</div>
                 <div class="valor" id="orc-total-geral">R$ 0,00</div>
             </div>
-            
-            <!-- Gráfico de barras (distribuição por tipo) -->
             <div class="chart-container">
-                <canvas id="grafico-orcamento-barras"></canvas>
-            </div>
-            
-            <!-- Gráfico de pizza (distribuição por tipo) -->
-            <h3>Distribuição por tipo (gráfico de pizza)</h3>
-            <div class="chart-container">
-                <canvas id="grafico-orcamento-pizza"></canvas>
+                <canvas id="grafico-orcamento"></canvas>
             </div>
         </div>
 
@@ -640,7 +608,6 @@
             <div class="form-expander">
                 <h3>➕ Adicionar relato</h3>
                 <div class="form-grid">
-                    <div class="form-group"><label>Atividade</label><input type="text" id="rel-atividade"></div>
                     <div class="form-group"><label>Objetivo</label><input type="text" id="rel-objetivo"></div>
                     <div class="form-group"><label>Data</label><input type="date" id="rel-data"></div>
                     <div class="form-group"><label>Povo</label><input type="text" id="rel-povo"></div>
@@ -664,38 +631,25 @@
     let tarefasRotineiras = [];
     let orcamentos = [];
     let relatosAtividades = [];
-
     let mesAtual = new Date().getMonth();
     let anoAtual = new Date().getFullYear();
     let orcamentoAtual = null;
     let graficoPeriodo = null;
-    let graficoOrcamentoBarras = null;
-    let graficoOrcamentoPizza = null;
-
-    let usuarioAtual = "Ana";
-    let viewAtual = "meus";
 
     function carregarDados() {
         try {
-            const dados = localStorage.getItem('dashColaborativo');
-            if (dados) {
-                const parsed = JSON.parse(dados);
-                atividadesEisenhower = parsed.atividadesEisenhower || [];
-                tarefasRotineiras = parsed.tarefasRotineiras || [];
-                orcamentos = parsed.orcamentos || [];
-                relatosAtividades = parsed.relatosAtividades || [];
-            }
+            if (localStorage.getItem('eisenhower')) atividadesEisenhower = JSON.parse(localStorage.getItem('eisenhower'));
+            if (localStorage.getItem('rotineiras')) tarefasRotineiras = JSON.parse(localStorage.getItem('rotineiras'));
+            if (localStorage.getItem('orcamentos')) orcamentos = JSON.parse(localStorage.getItem('orcamentos'));
+            if (localStorage.getItem('relatos')) relatosAtividades = JSON.parse(localStorage.getItem('relatos'));
         } catch (e) { console.error("Erro ao carregar dados", e); }
     }
 
     function salvarDados() {
-        const dados = {
-            atividadesEisenhower,
-            tarefasRotineiras,
-            orcamentos,
-            relatosAtividades
-        };
-        localStorage.setItem('dashColaborativo', JSON.stringify(dados));
+        localStorage.setItem('eisenhower', JSON.stringify(atividadesEisenhower));
+        localStorage.setItem('rotineiras', JSON.stringify(tarefasRotineiras));
+        localStorage.setItem('orcamentos', JSON.stringify(orcamentos));
+        localStorage.setItem('relatos', JSON.stringify(relatosAtividades));
     }
 
     function hoje() {
@@ -703,28 +657,12 @@
         return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;
     }
 
-    function filtrarPorUsuario(arr) {
-        if (viewAtual === 'equipe') return arr;
-        return arr.filter(item => item.usuario === usuarioAtual);
-    }
-
     window.addEventListener('load', function() {
         carregarDados();
-
         const idsData = ['eisen-data', 'rot-data', 'rel-data', 'orc-data-pedido', 'orc-data-atividade'];
         idsData.forEach(id => {
             const el = document.getElementById(id);
             if (el) el.value = hoje();
-        });
-
-        const select = document.getElementById('usuario-select');
-        const outroInput = document.getElementById('usuario-outro');
-        select.addEventListener('change', function() {
-            if (this.value === 'Outro') {
-                outroInput.style.display = 'block';
-            } else {
-                outroInput.style.display = 'none';
-            }
         });
 
         try {
@@ -764,32 +702,6 @@
         });
     }
 
-    function setView(tipo) {
-        viewAtual = tipo;
-        document.getElementById('view-meus').classList.toggle('active', tipo === 'meus');
-        document.getElementById('view-equipe').classList.toggle('active', tipo === 'equipe');
-        renderizarTudo();
-    }
-
-    function definirUsuario() {
-        const select = document.getElementById('usuario-select');
-        const outro = document.getElementById('usuario-outro');
-        if (select.value === 'Outro') {
-            if (!outro.value.trim()) {
-                alert('Digite seu nome');
-                return;
-            }
-            usuarioAtual = outro.value.trim();
-        } else {
-            usuarioAtual = select.value;
-        }
-        if (viewAtual === 'meus') {
-            renderizarTudo();
-        } else {
-            renderizarTudo();
-        }
-    }
-
     function renderizarTudo() {
         renderizarEisenhower();
         renderizarRotineiras();
@@ -798,6 +710,48 @@
         renderizarOrcamentos();
         renderizarRelatos();
         renderizarCalendario(mesAtual, anoAtual);
+    }
+
+    // ==================== EXPORTAR / IMPORTAR ====================
+    function exportarDados() {
+        const dados = {
+            eisenhower: atividadesEisenhower,
+            rotineiras: tarefasRotineiras,
+            orcamentos: orcamentos,
+            relatos: relatosAtividades
+        };
+        const blob = new Blob([JSON.stringify(dados, null, 2)], { type: 'application/json' });
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = `dashboard_${hoje()}.json`;
+        a.click();
+        URL.revokeObjectURL(url);
+    }
+
+    function importarDados(event) {
+        const file = event.target.files[0];
+        if (!file) return;
+
+        const reader = new FileReader();
+        reader.onload = function(e) {
+            try {
+                const dados = JSON.parse(e.target.result);
+                if (dados.eisenhower !== undefined) atividadesEisenhower = dados.eisenhower;
+                if (dados.rotineiras !== undefined) tarefasRotineiras = dados.rotineiras;
+                if (dados.orcamentos !== undefined) orcamentos = dados.orcamentos;
+                if (dados.relatos !== undefined) relatosAtividades = dados.relatos;
+
+                salvarDados();
+                renderizarTudo();
+                alert('Dados importados com sucesso!');
+            } catch (err) {
+                alert('Erro ao importar: arquivo inválido.');
+            }
+        };
+        reader.readAsText(file);
+        // Limpar input para permitir re-importar o mesmo arquivo
+        event.target.value = '';
     }
 
     // ==================== EISENHOWER ====================
@@ -809,7 +763,6 @@
         const quadrante = document.getElementById('eisen-quadrante').value;
         atividadesEisenhower.push({
             id: Date.now() + Math.random(),
-            usuario: usuarioAtual,
             titulo,
             descricao,
             data,
@@ -852,7 +805,6 @@
     function renderizarEisenhower() {
         const container = document.getElementById('eisen-quadrantes');
         if (!container) return;
-        const dadosFiltrados = filtrarPorUsuario(atividadesEisenhower);
         const quadrantes = [
             { key: 'Urgente e Importante (Fazer agora)', titulo: '🔴 Urgente e Importante', cor: '#dc3545' },
             { key: 'Importante, mas não Urgente (Agendar)', titulo: '🟡 Importante, não Urgente', cor: '#ffc107' },
@@ -861,14 +813,11 @@
         ];
         let html = '';
         quadrantes.forEach(q => {
-            const itens = dadosFiltrados.filter(i => i.quadrante === q.key);
+            const itens = atividadesEisenhower.filter(i => i.quadrante === q.key);
             html += `<div class="quadrante" style="border-left-color: ${q.cor};">`;
             html += `<h3>${q.titulo}</h3>`;
             itens.forEach(item => {
                 html += `<div class="atividade-item">`;
-                if (viewAtual === 'equipe') {
-                    html += `<span class="usuario-tag">${item.usuario}</span>`;
-                }
                 html += `<button class="delete-btn" onclick="excluirEisenhower(${item.id})">🗑️</button>`;
                 html += `<label class="check-label">`;
                 html += `<input type="checkbox" ${item.concluida ? 'checked' : ''} onchange="toggleEisenhower(${item.id})">`;
@@ -894,7 +843,6 @@
         const data = document.getElementById('rot-data').value;
         tarefasRotineiras.push({
             id: Date.now() + Math.random(),
-            usuario: usuarioAtual,
             titulo,
             descricao,
             data,
@@ -936,18 +884,14 @@
     function renderizarRotineiras() {
         const lista = document.getElementById('rotineiras-lista');
         if (!lista) return;
-        const dadosFiltrados = filtrarPorUsuario(tarefasRotineiras);
-        if (dadosFiltrados.length === 0) {
+        if (tarefasRotineiras.length === 0) {
             lista.innerHTML = '<p>Nenhuma tarefa cadastrada.</p>';
             return;
         }
-        const ordenadas = [...dadosFiltrados].sort((a,b) => a.data.localeCompare(b.data));
+        const ordenadas = [...tarefasRotineiras].sort((a,b) => a.data.localeCompare(b.data));
         let html = '';
         ordenadas.forEach(item => {
             html += `<div class="tarefa-item">`;
-            if (viewAtual === 'equipe') {
-                html += `<span class="usuario-tag">${item.usuario}</span>`;
-            }
             html += `<button class="delete-btn" onclick="excluirRotineira(${item.id})">🗑️</button>`;
             html += `<input type="checkbox" ${item.concluida ? 'checked' : ''} onchange="toggleRotineira(${item.id})">`;
             html += `<div class="detalhes"><strong>${item.titulo}</strong>`;
@@ -964,16 +908,16 @@
         const lista = document.getElementById('agenda-lista');
         if (!lista) return;
         const pendentes = [
-            ...filtrarPorUsuario(atividadesEisenhower).filter(i => !i.concluida).map(i => ({ ...i, tipo: 'Planejamento' })),
-            ...filtrarPorUsuario(tarefasRotineiras).filter(i => !i.concluida).map(i => ({ ...i, tipo: 'Rotina' }))
+            ...atividadesEisenhower.filter(i => !i.concluida).map(i => ({ ...i, tipo: 'Planejamento' })),
+            ...tarefasRotineiras.filter(i => !i.concluida).map(i => ({ ...i, tipo: 'Rotina' }))
         ].sort((a,b) => a.data.localeCompare(b.data));
         if (pendentes.length === 0) {
             lista.innerHTML = '<p>Nenhuma atividade pendente.</p>';
             return;
         }
-        let html = '<table style="width:100%; border-collapse: collapse;"><tr><th>Usuário</th><th>Data</th><th>Tipo</th><th>Título</th><th>Descrição</th></tr>';
+        let html = '<table style="width:100%; border-collapse: collapse;"><tr><th>Data</th><th>Tipo</th><th>Título</th><th>Descrição</th></tr>';
         pendentes.forEach(item => {
-            html += `<tr><td>${item.usuario}</td><td>${formatarData(item.data)}</td><td>${item.tipo}</td><td>${item.titulo}</td><td>${item.descricao || ''}</td></tr>`;
+            html += `<tr><td>${formatarData(item.data)}</td><td>${item.tipo}</td><td>${item.titulo}</td><td>${item.descricao || ''}</td></tr>`;
         });
         html += '</table>';
         lista.innerHTML = html;
@@ -1042,9 +986,6 @@
 
     // ==================== RELATÓRIO ====================
     function renderizarRelatorio() {
-        const dadosEisen = filtrarPorUsuario(atividadesEisenhower);
-        const dadosRot = filtrarPorUsuario(tarefasRotineiras);
-
         const metricEisenTotal = document.getElementById('metric-eisen-total');
         const metricEisenConcluidas = document.getElementById('metric-eisen-concluidas');
         const metricEisenPendentes = document.getElementById('metric-eisen-pendentes');
@@ -1053,15 +994,15 @@
         const metricRotPendentes = document.getElementById('metric-rot-pendentes');
 
         if (metricEisenTotal) {
-            const total = dadosEisen.length;
-            const concluidas = dadosEisen.filter(i => i.concluida).length;
+            const total = atividadesEisenhower.length;
+            const concluidas = atividadesEisenhower.filter(i => i.concluida).length;
             metricEisenTotal.innerText = `Total: ${total}`;
             if (metricEisenConcluidas) metricEisenConcluidas.innerText = `Concluídas: ${concluidas}`;
             if (metricEisenPendentes) metricEisenPendentes.innerText = `Pendentes: ${total - concluidas}`;
         }
         if (metricRotTotal) {
-            const total = dadosRot.length;
-            const concluidas = dadosRot.filter(i => i.concluida).length;
+            const total = tarefasRotineiras.length;
+            const concluidas = tarefasRotineiras.filter(i => i.concluida).length;
             metricRotTotal.innerText = `Total: ${total}`;
             if (metricRotConcluidas) metricRotConcluidas.innerText = `Concluídas: ${concluidas}`;
             if (metricRotPendentes) metricRotPendentes.innerText = `Pendentes: ${total - concluidas}`;
@@ -1070,8 +1011,8 @@
         const mesSelect = document.getElementById('mes-select');
         if (mesSelect) {
             const todasConcluidas = [
-                ...dadosEisen.filter(i => i.concluida),
-                ...dadosRot.filter(i => i.concluida)
+                ...atividadesEisenhower.filter(i => i.concluida),
+                ...tarefasRotineiras.filter(i => i.concluida)
             ];
             const mesesSet = new Set();
             todasConcluidas.forEach(i => { if (i.data) mesesSet.add(i.data.substring(0,7)); });
@@ -1085,11 +1026,9 @@
         const canvas = document.getElementById('grafico-periodo');
         if (!canvas) return;
         const periodo = document.getElementById('periodo-select').value;
-        const dadosEisen = filtrarPorUsuario(atividadesEisenhower);
-        const dadosRot = filtrarPorUsuario(tarefasRotineiras);
         const todasConcluidas = [
-            ...dadosEisen.filter(i => i.concluida && i.data),
-            ...dadosRot.filter(i => i.concluida && i.data)
+            ...atividadesEisenhower.filter(i => i.concluida && i.data),
+            ...tarefasRotineiras.filter(i => i.concluida && i.data)
         ].map(i => i.data);
         if (todasConcluidas.length === 0) {
             if (graficoPeriodo) graficoPeriodo.destroy();
@@ -1132,40 +1071,32 @@
         const mesAno = document.getElementById('mes-select').value;
         if (!mesAno) return;
         const [ano, mes] = mesAno.split('-');
-        const dadosEisen = filtrarPorUsuario(atividadesEisenhower);
-        const dadosRot = filtrarPorUsuario(tarefasRotineiras);
         const concluidas = [
-            ...dadosEisen.filter(i => i.concluida && i.data),
-            ...dadosRot.filter(i => i.concluida && i.data)
+            ...atividadesEisenhower.filter(i => i.concluida && i.data),
+            ...tarefasRotineiras.filter(i => i.concluida && i.data)
         ].filter(i => {
             const [a, m] = i.data.split('-');
             return a === ano && m === mes;
         });
         let html = `<p>Total no mês: ${concluidas.length}</p>`;
         if (concluidas.length > 0) {
-            html += '<table><tr><th>Usuário</th><th>Data</th><th>Tipo</th><th>Título</th></tr>';
+            html += '<table><tr><th>Data</th><th>Tipo</th><th>Título</th></tr>';
             concluidas.sort((a,b) => a.data.localeCompare(b.data)).forEach(i => {
-                html += `<tr><td>${i.usuario}</td><td>${formatarData(i.data)}</td><td>${i.tipo ? i.tipo : (i.quadrante ? 'Planejamento' : 'Rotina')}</td><td>${i.titulo}</td></tr>`;
+                html += `<tr><td>${formatarData(i.data)}</td><td>${i.tipo ? i.tipo : (i.quadrante ? 'Planejamento' : 'Rotina')}</td><td>${i.titulo}</td></tr>`;
             });
             html += '</table>';
         }
         document.getElementById('detalhamento-mensal').innerHTML = html;
     }
 
-    // ==================== ORÇAMENTOS (com gráfico de pizza) ====================
+    // ==================== ORÇAMENTOS ====================
     function iniciarNovoOrcamento() {
         const descricao = document.getElementById('orc-descricao').value.trim();
         const dataPedido = document.getElementById('orc-data-pedido').value;
         const dataAtividade = document.getElementById('orc-data-atividade').value;
         if (!descricao) return alert('Descrição da atividade é obrigatória');
         if (!dataPedido || !dataAtividade) return alert('Informe as datas');
-        orcamentoAtual = { 
-            usuario: usuarioAtual,
-            descricao, 
-            dataPedido, 
-            dataAtividade, 
-            itens: [] 
-        };
+        orcamentoAtual = { descricao, dataPedido, dataAtividade, itens: [] };
         document.getElementById('orc-descricao-atual').innerText = descricao;
         document.getElementById('orc-data-pedido-atual').innerText = formatarData(dataPedido);
         document.getElementById('orc-data-atividade-atual').innerText = formatarData(dataAtividade);
@@ -1213,7 +1144,6 @@
         if (orcamentoAtual.itens.length === 0 && !confirm('Nenhum item adicionado. Deseja finalizar mesmo assim?')) return;
         const novoOrcamento = {
             id: Date.now() + Math.random(),
-            usuario: usuarioAtual,
             descricao: orcamentoAtual.descricao,
             dataPedido: orcamentoAtual.dataPedido,
             dataAtividade: orcamentoAtual.dataAtividade,
@@ -1244,20 +1174,16 @@
     function renderizarOrcamentos() {
         const lista = document.getElementById('orcamentos-lista');
         if (!lista) return;
-        const dadosFiltrados = filtrarPorUsuario(orcamentos);
-        if (dadosFiltrados.length === 0) {
+        if (orcamentos.length === 0) {
             lista.innerHTML = '<p>Nenhum orçamento cadastrado.</p>';
         } else {
-            const ordenados = [...dadosFiltrados].sort((a, b) => b.dataPedido.localeCompare(a.dataPedido));
+            const ordenados = [...orcamentos].sort((a, b) => b.dataPedido.localeCompare(a.dataPedido));
             let html = '';
             ordenados.forEach(orc => {
                 const totalOrc = orc.itens.reduce((acc, i) => acc + i.total, 0);
                 html += `<div class="orcamento-item">`;
-                html += `<div class="orcamento-header">`;
-                html += `<h3>${orc.descricao} ${viewAtual === 'equipe' ? `<span class="usuario-tag">${orc.usuario}</span>` : ''}</h3>`;
-                html += `<span class="total">Total: R$ ${totalOrc.toFixed(2)}</span>`;
-                html += `<button class="btn-small" onclick="removerOrcamento(${orc.id})">🗑️ Excluir</button>`;
-                html += `</div>`;
+                html += `<div class="orcamento-header"><h3>${orc.descricao}</h3><span class="total">Total: R$ ${totalOrc.toFixed(2)}</span>`;
+                html += `<button class="btn-small" onclick="removerOrcamento(${orc.id})">🗑️ Excluir</button></div>`;
                 html += `<p><strong>Data do pedido:</strong> ${formatarData(orc.dataPedido)} | <strong>Data da atividade:</strong> ${formatarData(orc.dataAtividade)}</p>`;
                 if (orc.itens.length > 0) {
                     html += '<table class="itens-table"><tr><th>Tipo</th><th>Valor unit.</th><th>Qtd</th><th>Total</th></tr>';
@@ -1271,19 +1197,17 @@
             lista.innerHTML = html;
         }
 
-        // Total acumulado
-        const totalGeral = dadosFiltrados.reduce((acc, orc) => acc + orc.itens.reduce((sub, i) => sub + i.total, 0), 0);
+        const totalGeral = orcamentos.reduce((acc, orc) => acc + orc.itens.reduce((sub, i) => sub + i.total, 0), 0);
         const totalEl = document.getElementById('orc-total-geral');
         if (totalEl) totalEl.innerText = `R$ ${totalGeral.toFixed(2)}`;
 
-        // Gráfico de barras
-        const ctxBarras = document.getElementById('grafico-orcamento-barras')?.getContext('2d');
-        if (ctxBarras) {
-            if (graficoOrcamentoBarras) graficoOrcamentoBarras.destroy();
-            if (dadosFiltrados.length > 0) {
+        const ctx = document.getElementById('grafico-orcamento')?.getContext('2d');
+        if (ctx) {
+            if (window.graficoOrc) window.graficoOrc.destroy();
+            if (orcamentos.length > 0) {
                 const tipos = {};
-                dadosFiltrados.forEach(orc => orc.itens.forEach(item => tipos[item.tipo] = (tipos[item.tipo] || 0) + item.total));
-                graficoOrcamentoBarras = new Chart(ctxBarras, {
+                orcamentos.forEach(orc => orc.itens.forEach(item => tipos[item.tipo] = (tipos[item.tipo] || 0) + item.total));
+                window.graficoOrc = new Chart(ctx, {
                     type: 'bar',
                     data: {
                         labels: Object.keys(tipos),
@@ -1293,44 +1217,12 @@
                 });
             }
         }
-
-        // Gráfico de pizza
-        const ctxPizza = document.getElementById('grafico-orcamento-pizza')?.getContext('2d');
-        if (ctxPizza) {
-            if (graficoOrcamentoPizza) graficoOrcamentoPizza.destroy();
-            if (dadosFiltrados.length > 0) {
-                const tipos = {};
-                dadosFiltrados.forEach(orc => orc.itens.forEach(item => tipos[item.tipo] = (tipos[item.tipo] || 0) + item.total));
-                // Gerar cores aleatórias para cada fatia
-                const cores = Object.keys(tipos).map(() => `hsl(${Math.random() * 360}, 70%, 60%)`);
-                graficoOrcamentoPizza = new Chart(ctxPizza, {
-                    type: 'pie',
-                    data: {
-                        labels: Object.keys(tipos),
-                        datasets: [{
-                            data: Object.values(tipos),
-                            backgroundColor: cores,
-                            borderColor: 'white',
-                            borderWidth: 2
-                        }]
-                    },
-                    options: {
-                        responsive: true,
-                        maintainAspectRatio: false,
-                        plugins: {
-                            legend: { position: 'bottom' }
-                        }
-                    }
-                });
-            }
-        }
     }
 
     // ==================== RELATOS ====================
     function adicionarRelato() {
-        const atividade = document.getElementById('rel-atividade').value.trim();
         const objetivo = document.getElementById('rel-objetivo').value.trim();
-        if (!atividade || !objetivo) return alert('Atividade e Objetivo são obrigatórios');
+        if (!objetivo) return alert('Objetivo é obrigatório');
         const data = document.getElementById('rel-data').value;
         const povo = document.getElementById('rel-povo').value;
         const pessoas = document.getElementById('rel-pessoas').value;
@@ -1339,8 +1231,6 @@
         const pontos = document.getElementById('rel-pontos').value;
         relatosAtividades.push({
             id: Date.now() + Math.random(),
-            usuario: usuarioAtual,
-            atividade,
             objetivo,
             data,
             povo,
@@ -1351,7 +1241,6 @@
         });
         salvarDados();
         renderizarRelatos();
-        document.getElementById('rel-atividade').value = '';
         document.getElementById('rel-objetivo').value = '';
         document.getElementById('rel-povo').value = '';
         document.getElementById('rel-pessoas').value = '';
@@ -1361,43 +1250,24 @@
     }
 
     function removerRelato(id) {
-        if (confirm('Tem certeza que deseja excluir este relato?')) {
-            relatosAtividades = relatosAtividades.filter(i => i.id != id);
-            salvarDados();
-            renderizarRelatos();
-        }
-    }
-
-    function copiarRelato(id) {
-        const relato = relatosAtividades.find(i => i.id == id);
-        if (!relato) return;
-        const texto = `Atividade: ${relato.atividade}\nObjetivo: ${relato.objetivo}\nData: ${formatarData(relato.data)}\nPovo: ${relato.povo}\nPessoas: ${relato.pessoas}\nAlcançado: ${relato.alcancado}\nDesafios: ${relato.desafios}\nPontos importantes: ${relato.pontos}`;
-        navigator.clipboard.writeText(texto).then(() => {
-            alert('Relato copiado para a área de transferência!');
-        }).catch(() => {
-            alert('Erro ao copiar. Selecione manualmente.');
-        });
+        relatosAtividades = relatosAtividades.filter(i => i.id != id);
+        salvarDados();
+        renderizarRelatos();
     }
 
     function renderizarRelatos() {
         const lista = document.getElementById('relatos-lista');
         if (!lista) return;
-        const dadosFiltrados = filtrarPorUsuario(relatosAtividades);
-        if (dadosFiltrados.length === 0) {
+        if (relatosAtividades.length === 0) {
             lista.innerHTML = '<p>Nenhum relato cadastrado.</p>';
             return;
         }
         let html = '';
-        dadosFiltrados.sort((a,b) => b.data.localeCompare(a.data)).forEach(rel => {
-            html += `<div style="background:#f8f9fa; padding:15px; border-radius:8px; margin-bottom:15px; position:relative;">`;
-            if (viewAtual === 'equipe') {
-                html += `<span class="usuario-tag">${rel.usuario}</span>`;
-            }
-            html += `<div style="display:flex; justify-content:space-between; align-items:center;">`;
-            html += `<div><strong>${rel.atividade}</strong> - ${rel.objetivo}</div>`;
-            html += `<div><span>${formatarData(rel.data)}</span>`;
-            html += `<button class="btn-small" onclick="copiarRelato(${rel.id})" style="margin-left:10px;">📋 Copiar</button>`;
-            html += `<button class="btn-small" onclick="removerRelato(${rel.id})" style="margin-left:5px;">🗑️</button></div>`;
+        relatosAtividades.sort((a,b) => b.data.localeCompare(a.data)).forEach(rel => {
+            html += `<div style="background:#f8f9fa; padding:15px; border-radius:8px; margin-bottom:15px;">`;
+            html += `<div style="display:flex; justify-content:space-between;">`;
+            html += `<strong>${rel.objetivo}</strong> <span>${formatarData(rel.data)}</span>`;
+            html += `<button class="btn-small" onclick="removerRelato(${rel.id})">🗑️</button>`;
             html += `</div>`;
             html += `<p><strong>Povo:</strong> ${rel.povo} | <strong>Pessoas:</strong> ${rel.pessoas}</p>`;
             html += `<p><strong>Alcançado:</strong> ${rel.alcancado}</p>`;
