@@ -527,7 +527,7 @@
         <button class="tab-button" data-tab="tab3">📅 Agenda</button>
         <button class="tab-button" data-tab="tab4">📊 Relatório</button>
         <button class="tab-button" data-tab="tab5">💰 Orçamentos</button>
-        <button class="tab-button" data-tab="tab6">📝 Relatório de Ativiades</button>
+        <button class="tab-button" data-tab="tab6">📝 Relatório de Atividades</button>
     </div>
     
     <div class="tab-content" id="tabContent">
