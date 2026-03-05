@@ -9,7 +9,6 @@
     <!-- Font Awesome -->
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
     <style>
-        /* (mesmos estilos das versões anteriores) */
         * {
             box-sizing: border-box;
             font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
@@ -28,6 +27,61 @@
             color: #1e1e2f;
             margin-bottom: 10px;
             font-weight: 600;
+        }
+        /* Barra de usuário */
+        .user-bar {
+            display: flex;
+            gap: 15px;
+            margin-bottom: 20px;
+            padding: 15px;
+            background: #e9ecef;
+            border-radius: 8px;
+            align-items: center;
+            flex-wrap: wrap;
+        }
+        .user-select {
+            padding: 8px 12px;
+            border-radius: 5px;
+            border: 1px solid #ced4da;
+            font-size: 16px;
+            min-width: 150px;
+        }
+        .user-btn {
+            background: #4361ee;
+            color: white;
+            border: none;
+            padding: 8px 16px;
+            border-radius: 5px;
+            cursor: pointer;
+            font-weight: 600;
+            font-size: 14px;
+        }
+        .user-btn:hover {
+            background: #3046c0;
+        }
+        .user-btn.success {
+            background: #28a745;
+        }
+        .user-btn.success:hover {
+            background: #218838;
+        }
+        .user-btn.info {
+            background: #17a2b8;
+        }
+        .user-btn.info:hover {
+            background: #138496;
+        }
+        .user-btn.warning {
+            background: #ffc107;
+            color: #1e1e2f;
+        }
+        .user-btn.warning:hover {
+            background: #e0a800;
+        }
+        .user-status {
+            margin-left: auto;
+            font-weight: 600;
+            color: #2c3e50;
         }
         .backup-bar {
             display: flex;
@@ -431,11 +485,32 @@
         .copy-btn:hover {
             background: #5a6268;
         }
+        .usuario-badge {
+            display: inline-block;
+            background: #4361ee;
+            color: white;
+            padding: 2px 8px;
+            border-radius: 12px;
+            font-size: 11px;
+            margin-left: 8px;
+        }
     </style>
 </head>
 <body>
 <div class="container">
     <h1>📋 Dashboard de Planejamento Pessoal</h1>
+
+    <!-- Barra de seleção de usuário -->
+    <div class="user-bar">
+        <select id="usuario-select" class="user-select">
+            <option value="carlos">Carlos</option>
+            <option value="suellem">Suellem</option>
+        </select>
+        <button class="user-btn success" onclick="confirmarUsuario()">✅ Confirmar Entrada</button>
+        <button class="user-btn info" onclick="acessarInfoUsuario()">👤 Acessar Informações</button>
+        <button class="user-btn warning" onclick="visualizarEquipe()">👥 Equipe</button>
+        <span class="user-status" id="user-status">Nenhum usuário ativo</span>
+    </div>
 
     <!-- Barra de backup/restauração -->
     <div class="backup-bar">
@@ -632,13 +707,12 @@
             </div>
         </div>
 
-        <!-- Aba 6: Relatos (MODIFICADA) -->
+        <!-- Aba 6: Relatos -->
         <div class="tab-pane" id="tab6">
             <h2>Relatos de Atividades</h2>
             <div class="form-expander">
                 <h3>➕ Adicionar relato</h3>
                 <div class="form-grid">
-                    <!-- Novo campo: Atividade -->
                     <div class="form-group">
                         <label>Atividade</label>
                         <input type="text" id="rel-atividade" placeholder="Ex: Reunião, Visita, etc.">
@@ -684,10 +758,25 @@
 
 <script>
     // ==================== INICIALIZAÇÃO ====================
-    let atividadesEisenhower = [];
-    let tarefasRotineiras = [];
-    let orcamentos = [];
-    let relatosAtividades = [];
+    // Estrutura de dados por usuário
+    let dadosPorUsuario = {
+        carlos: {
+            eisenhower: [],
+            rotineiras: [],
+            orcamentos: [],
+            relatos: []
+        },
+        suellem: {
+            eisenhower: [],
+            rotineiras: [],
+            orcamentos: [],
+            relatos: []
+        }
+    };
+
+    let usuarioAtual = null;
+    let modoVisualizacao = 'usuario'; // 'usuario' ou 'equipe'
+
     let mesAtual = new Date().getMonth();
     let anoAtual = new Date().getFullYear();
     let orcamentoAtual = null;
@@ -695,18 +784,15 @@
 
     function carregarDados() {
         try {
-            if (localStorage.getItem('eisenhower')) atividadesEisenhower = JSON.parse(localStorage.getItem('eisenhower'));
-            if (localStorage.getItem('rotineiras')) tarefasRotineiras = JSON.parse(localStorage.getItem('rotineiras'));
-            if (localStorage.getItem('orcamentos')) orcamentos = JSON.parse(localStorage.getItem('orcamentos'));
-            if (localStorage.getItem('relatos')) relatosAtividades = JSON.parse(localStorage.getItem('relatos'));
+            const dadosSalvos = localStorage.getItem('dadosPorUsuario');
+            if (dadosSalvos) {
+                dadosPorUsuario = JSON.parse(dadosSalvos);
+            }
         } catch (e) { console.error("Erro ao carregar dados", e); }
     }
 
     function salvarDados() {
-        localStorage.setItem('eisenhower', JSON.stringify(atividadesEisenhower));
-        localStorage.setItem('rotineiras', JSON.stringify(tarefasRotineiras));
-        localStorage.setItem('orcamentos', JSON.stringify(orcamentos));
-        localStorage.setItem('relatos', JSON.stringify(relatosAtividades));
+        localStorage.setItem('dadosPorUsuario', JSON.stringify(dadosPorUsuario));
     }
 
     function hoje() {
@@ -714,110 +800,67 @@
         return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;
     }
 
-    window.addEventListener('load', function() {
-        carregarDados();
-        const idsData = ['eisen-data', 'rot-data', 'rel-data', 'orc-data-pedido', 'orc-data-atividade'];
-        idsData.forEach(id => {
-            const el = document.getElementById(id);
-            if (el) el.value = hoje();
-        });
-
-        try {
-            renderizarTudo();
-        } catch (e) {
-            console.error("Erro na renderização inicial", e);
+    // Getters para os dados conforme modo de visualização
+    function getAtividadesEisenhower() {
+        if (modoVisualizacao === 'equipe') {
+            return [
+                ...dadosPorUsuario.carlos.eisenhower.map(item => ({ ...item, usuario: 'Carlos' })),
+                ...dadosPorUsuario.suellem.eisenhower.map(item => ({ ...item, usuario: 'Suellem' }))
+            ];
+        } else if (usuarioAtual) {
+            return dadosPorUsuario[usuarioAtual].eisenhower;
         }
+        return [];
+    }
 
-        configurarAbas();
-
-        const itemTipo = document.getElementById('item-tipo');
-        if (itemTipo) {
-            itemTipo.addEventListener('change', function() {
-                const grupo = document.getElementById('item-outro-group');
-                if (grupo) grupo.style.display = this.value === 'Outro' ? 'block' : 'none';
-            });
+    function getTarefasRotineiras() {
+        if (modoVisualizacao === 'equipe') {
+            return [
+                ...dadosPorUsuario.carlos.rotineiras.map(item => ({ ...item, usuario: 'Carlos' })),
+                ...dadosPorUsuario.suellem.rotineiras.map(item => ({ ...item, usuario: 'Suellem' }))
+            ];
+        } else if (usuarioAtual) {
+            return dadosPorUsuario[usuarioAtual].rotineiras;
         }
-    });
-
-    function configurarAbas() {
-        const botoes = document.querySelectorAll('.tab-button');
-        botoes.forEach(btn => {
-            btn.addEventListener('click', function(e) {
-                const tabId = this.getAttribute('data-tab');
-                document.querySelectorAll('.tab-button').forEach(b => b.classList.remove('active'));
-                this.classList.add('active');
-                document.querySelectorAll('.tab-pane').forEach(p => p.classList.remove('active'));
-                const alvo = document.getElementById(tabId);
-                if (alvo) alvo.classList.add('active');
-
-                if (tabId === 'tab3') {
-                    renderizarCalendario(mesAtual, anoAtual);
-                } else if (tabId === 'tab5') {
-                    renderizarOrcamentos();
-                }
-            });
-        });
+        return [];
     }
 
-    function renderizarTudo() {
-        renderizarEisenhower();
-        renderizarRotineiras();
-        renderizarAgenda();
-        renderizarRelatorio();
-        renderizarOrcamentos();
-        renderizarRelatos();
-        renderizarCalendario(mesAtual, anoAtual);
+    function getOrcamentos() {
+        if (modoVisualizacao === 'equipe') {
+            return [
+                ...dadosPorUsuario.carlos.orcamentos.map(item => ({ ...item, usuario: 'Carlos' })),
+                ...dadosPorUsuario.suellem.orcamentos.map(item => ({ ...item, usuario: 'Suellem' }))
+            ];
+        } else if (usuarioAtual) {
+            return dadosPorUsuario[usuarioAtual].orcamentos;
+        }
+        return [];
     }
 
-    // ==================== EXPORTAR / IMPORTAR ====================
-    function exportarDados() {
-        const dados = {
-            eisenhower: atividadesEisenhower,
-            rotineiras: tarefasRotineiras,
-            orcamentos: orcamentos,
-            relatos: relatosAtividades
-        };
-        const blob = new Blob([JSON.stringify(dados, null, 2)], { type: 'application/json' });
-        const url = URL.createObjectURL(blob);
-        const a = document.createElement('a');
-        a.href = url;
-        a.download = `dashboard_${hoje()}.json`;
-        a.click();
-        URL.revokeObjectURL(url);
+    function getRelatos() {
+        if (modoVisualizacao === 'equipe') {
+            return [
+                ...dadosPorUsuario.carlos.relatos.map(item => ({ ...item, usuario: 'Carlos' })),
+                ...dadosPorUsuario.suellem.relatos.map(item => ({ ...item, usuario: 'Suellem' }))
+            ];
+        } else if (usuarioAtual) {
+            return dadosPorUsuario[usuarioAtual].relatos;
+        }
+        return [];
     }
 
-    function importarDados(event) {
-        const file = event.target.files[0];
-        if (!file) return;
-
-        const reader = new FileReader();
-        reader.onload = function(e) {
-            try {
-                const dados = JSON.parse(e.target.result);
-                if (dados.eisenhower !== undefined) atividadesEisenhower = dados.eisenhower;
-                if (dados.rotineiras !== undefined) tarefasRotineiras = dados.rotineiras;
-                if (dados.orcamentos !== undefined) orcamentos = dados.orcamentos;
-                if (dados.relatos !== undefined) relatosAtividades = dados.relatos;
-
-                salvarDados();
-                renderizarTudo();
-                alert('Dados importados com sucesso!');
-            } catch (err) {
-                alert('Erro ao importar: arquivo inválido.');
-            }
-        };
-        reader.readAsText(file);
-        event.target.value = '';
-    }
-
-    // ==================== EISENHOWER ====================
+    // Funções de manipulação de dados (adaptadas)
     function adicionarEisenhower() {
+        if (!usuarioAtual && modoVisualizacao !== 'equipe') return alert('Selecione um usuário primeiro!');
+        if (modoVisualizacao === 'equipe') return alert('Desative o modo Equipe para adicionar dados individuais.');
+
         const titulo = document.getElementById('eisen-titulo').value.trim();
         if (!titulo) return alert('Título é obrigatório');
         const descricao = document.getElementById('eisen-descricao').value;
         const data = document.getElementById('eisen-data').value;
         const quadrante = document.getElementById('eisen-quadrante').value;
-        atividadesEisenhower.push({
+
+        dadosPorUsuario[usuarioAtual].eisenhower.push({
             id: Date.now() + Math.random(),
             titulo,
             descricao,
@@ -826,78 +869,43 @@
             concluida: false
         });
         salvarDados();
-        renderizarEisenhower();
-        renderizarAgenda();
-        renderizarRelatorio();
-        renderizarCalendario(mesAtual, anoAtual);
+        renderizarTudo();
         document.getElementById('eisen-titulo').value = '';
         document.getElementById('eisen-descricao').value = '';
         document.getElementById('eisen-data').value = hoje();
     }
 
     function toggleEisenhower(id) {
-        const item = atividadesEisenhower.find(i => i.id == id);
-        if (item) {
-            item.concluida = !item.concluida;
+        if (modoVisualizacao === 'equipe') return alert('Não é possível alterar no modo Equipe.');
+
+        const index = dadosPorUsuario[usuarioAtual].eisenhower.findIndex(i => i.id == id);
+        if (index !== -1) {
+            dadosPorUsuario[usuarioAtual].eisenhower[index].concluida = !dadosPorUsuario[usuarioAtual].eisenhower[index].concluida;
             salvarDados();
-            renderizarEisenhower();
-            renderizarAgenda();
-            renderizarRelatorio();
-            renderizarCalendario(mesAtual, anoAtual);
+            renderizarTudo();
         }
     }
 
     function excluirEisenhower(id) {
+        if (modoVisualizacao === 'equipe') return alert('Não é possível excluir no modo Equipe.');
+
         if (confirm('Tem certeza que deseja excluir esta atividade?')) {
-            atividadesEisenhower = atividadesEisenhower.filter(i => i.id != id);
+            dadosPorUsuario[usuarioAtual].eisenhower = dadosPorUsuario[usuarioAtual].eisenhower.filter(i => i.id != id);
             salvarDados();
-            renderizarEisenhower();
-            renderizarAgenda();
-            renderizarRelatorio();
-            renderizarCalendario(mesAtual, anoAtual);
+            renderizarTudo();
         }
     }
 
-    function renderizarEisenhower() {
-        const container = document.getElementById('eisen-quadrantes');
-        if (!container) return;
-        const quadrantes = [
-            { key: 'Urgente e Importante (Fazer agora)', titulo: '🔴 Urgente e Importante', cor: '#dc3545' },
-            { key: 'Importante, mas não Urgente (Agendar)', titulo: '🟡 Importante, não Urgente', cor: '#ffc107' },
-            { key: 'Urgente, mas não Importante (Delegar)', titulo: '🟠 Urgente, não Importante', cor: '#fd7e14' },
-            { key: 'Nem Urgente nem Importante (Eliminar)', titulo: '🔵 Nem Urgente nem Importante', cor: '#17a2b8' }
-        ];
-        let html = '';
-        quadrantes.forEach(q => {
-            const itens = atividadesEisenhower.filter(i => i.quadrante === q.key);
-            html += `<div class="quadrante" style="border-left-color: ${q.cor};">`;
-            html += `<h3>${q.titulo}</h3>`;
-            itens.forEach(item => {
-                html += `<div class="atividade-item">`;
-                html += `<button class="delete-btn" onclick="excluirEisenhower(${item.id})">🗑️</button>`;
-                html += `<label class="check-label">`;
-                html += `<input type="checkbox" ${item.concluida ? 'checked' : ''} onchange="toggleEisenhower(${item.id})">`;
-                html += `<strong>${item.titulo}</strong>`;
-                html += `</label>`;
-                html += `<div class="data-info">${formatarData(item.data)}</div>`;
-                if (item.descricao) {
-                    html += `<div class="popover">📝 ${item.descricao}</div>`;
-                }
-                html += `</div>`;
-            });
-            if (itens.length === 0) html += `<p style="color:#999;">Nenhuma atividade</p>`;
-            html += `</div>`;
-        });
-        container.innerHTML = html;
-    }
-
-    // ==================== ROTINEIRAS ====================
     function adicionarRotineira() {
+        if (!usuarioAtual && modoVisualizacao !== 'equipe') return alert('Selecione um usuário primeiro!');
+        if (modoVisualizacao === 'equipe') return alert('Desative o modo Equipe para adicionar dados individuais.');
+
         const titulo = document.getElementById('rot-titulo').value.trim();
         if (!titulo) return alert('Título é obrigatório');
         const descricao = document.getElementById('rot-descricao').value;
         const data = document.getElementById('rot-data').value;
-        tarefasRotineiras.push({
+
+        dadosPorUsuario[usuarioAtual].rotineiras.push({
             id: Date.now() + Math.random(),
             titulo,
             descricao,
@@ -905,248 +913,85 @@
             concluida: false
         });
         salvarDados();
-        renderizarRotineiras();
-        renderizarAgenda();
-        renderizarRelatorio();
-        renderizarCalendario(mesAtual, anoAtual);
+        renderizarTudo();
         document.getElementById('rot-titulo').value = '';
         document.getElementById('rot-descricao').value = '';
         document.getElementById('rot-data').value = hoje();
     }
 
     function toggleRotineira(id) {
-        const item = tarefasRotineiras.find(i => i.id == id);
-        if (item) {
-            item.concluida = !item.concluida;
+        if (modoVisualizacao === 'equipe') return alert('Não é possível alterar no modo Equipe.');
+
+        const index = dadosPorUsuario[usuarioAtual].rotineiras.findIndex(i => i.id == id);
+        if (index !== -1) {
+            dadosPorUsuario[usuarioAtual].rotineiras[index].concluida = !dadosPorUsuario[usuarioAtual].rotineiras[index].concluida;
             salvarDados();
-            renderizarRotineiras();
-            renderizarAgenda();
-            renderizarRelatorio();
-            renderizarCalendario(mesAtual, anoAtual);
+            renderizarTudo();
         }
     }
 
     function excluirRotineira(id) {
+        if (modoVisualizacao === 'equipe') return alert('Não é possível excluir no modo Equipe.');
+
         if (confirm('Tem certeza que deseja excluir esta tarefa?')) {
-            tarefasRotineiras = tarefasRotineiras.filter(i => i.id != id);
+            dadosPorUsuario[usuarioAtual].rotineiras = dadosPorUsuario[usuarioAtual].rotineiras.filter(i => i.id != id);
             salvarDados();
-            renderizarRotineiras();
-            renderizarAgenda();
-            renderizarRelatorio();
-            renderizarCalendario(mesAtual, anoAtual);
+            renderizarTudo();
         }
     }
 
-    function renderizarRotineiras() {
-        const lista = document.getElementById('rotineiras-lista');
-        if (!lista) return;
-        if (tarefasRotineiras.length === 0) {
-            lista.innerHTML = '<p>Nenhuma tarefa cadastrada.</p>';
-            return;
-        }
-        const ordenadas = [...tarefasRotineiras].sort((a,b) => a.data.localeCompare(b.data));
-        let html = '';
-        ordenadas.forEach(item => {
-            html += `<div class="tarefa-item">`;
-            html += `<button class="delete-btn" onclick="excluirRotineira(${item.id})">🗑️</button>`;
-            html += `<input type="checkbox" ${item.concluida ? 'checked' : ''} onchange="toggleRotineira(${item.id})">`;
-            html += `<div class="detalhes"><strong>${item.titulo}</strong>`;
-            if (item.descricao) html += `<br><small>${item.descricao}</small>`;
-            html += `</div>`;
-            html += `<div class="data">${formatarData(item.data)}</div>`;
-            html += `</div>`;
+    function adicionarRelato() {
+        if (!usuarioAtual && modoVisualizacao !== 'equipe') return alert('Selecione um usuário primeiro!');
+        if (modoVisualizacao === 'equipe') return alert('Desative o modo Equipe para adicionar dados individuais.');
+
+        const atividade = document.getElementById('rel-atividade').value.trim();
+        const objetivo = document.getElementById('rel-objetivo').value.trim();
+        if (!atividade) return alert('Campo Atividade é obrigatório');
+        if (!objetivo) return alert('Objetivo é obrigatório');
+        const data = document.getElementById('rel-data').value;
+        const povo = document.getElementById('rel-povo').value;
+        const pessoas = document.getElementById('rel-pessoas').value;
+        const alcancado = document.getElementById('rel-alcancado').value;
+        const desafios = document.getElementById('rel-desafios').value;
+        const pontos = document.getElementById('rel-pontos').value;
+
+        dadosPorUsuario[usuarioAtual].relatos.push({
+            id: Date.now() + Math.random(),
+            atividade,
+            objetivo,
+            data,
+            povo,
+            pessoas,
+            alcancado,
+            desafios,
+            pontos
         });
-        lista.innerHTML = html;
+        salvarDados();
+        renderizarTudo();
+        document.getElementById('rel-atividade').value = '';
+        document.getElementById('rel-objetivo').value = '';
+        document.getElementById('rel-povo').value = '';
+        document.getElementById('rel-pessoas').value = '';
+        document.getElementById('rel-desafios').value = '';
+        document.getElementById('rel-pontos').value = '';
+        document.getElementById('rel-data').value = hoje();
     }
 
-    // ==================== AGENDA ====================
-    function renderizarAgenda() {
-        const lista = document.getElementById('agenda-lista');
-        if (!lista) return;
-        const pendentes = [
-            ...atividadesEisenhower.filter(i => !i.concluida).map(i => ({ ...i, tipo: 'Planejamento' })),
-            ...tarefasRotineiras.filter(i => !i.concluida).map(i => ({ ...i, tipo: 'Rotina' }))
-        ].sort((a,b) => a.data.localeCompare(b.data));
-        if (pendentes.length === 0) {
-            lista.innerHTML = '<p>Nenhuma atividade pendente.</p>';
-            return;
+    function removerRelato(id) {
+        if (modoVisualizacao === 'equipe') return alert('Não é possível excluir no modo Equipe.');
+
+        if (confirm('Tem certeza que deseja excluir este relato?')) {
+            dadosPorUsuario[usuarioAtual].relatos = dadosPorUsuario[usuarioAtual].relatos.filter(i => i.id != id);
+            salvarDados();
+            renderizarTudo();
         }
-        let html = '<table style="width:100%; border-collapse: collapse;"><tr><th>Data</th><th>Tipo</th><th>Título</th><th>Descrição</th></tr>';
-        pendentes.forEach(item => {
-            html += `<tr><td>${formatarData(item.data)}</td><td>${item.tipo}</td><td>${item.titulo}</td><td>${item.descricao || ''}</td></tr>`;
-        });
-        html += '</table>';
-        lista.innerHTML = html;
     }
 
-    // ==================== CALENDÁRIO ====================
-    function renderizarCalendario(mes, ano) {
-        const grid = document.getElementById('calendario-grid');
-        const titulo = document.getElementById('mes-ano-titulo');
-        if (!grid || !titulo) return;
-        const meses = ['Janeiro','Fevereiro','Março','Abril','Maio','Junho','Julho','Agosto','Setembro','Outubro','Novembro','Dezembro'];
-        titulo.innerText = `${meses[mes]} ${ano}`;
-        const diasSemana = ['Dom','Seg','Ter','Qua','Qui','Sex','Sáb'];
-        let html = '';
-        diasSemana.forEach(dia => html += `<div class="calendario-dia-semana">${dia}</div>`);
-
-        const primeiroDia = new Date(ano, mes, 1);
-        const diaSemanaInicio = primeiroDia.getDay();
-        const ultimoDia = new Date(ano, mes + 1, 0).getDate();
-        const mesAnterior = mes === 0 ? 11 : mes - 1;
-        const anoAnterior = mes === 0 ? ano - 1 : ano;
-        const ultimoDiaMesAnterior = new Date(anoAnterior, mesAnterior + 1, 0).getDate();
-        const atividadesPorData = obterAtividadesPorData();
-
-        let contador = 0;
-        for (let i = diaSemanaInicio - 1; i >= 0; i--) {
-            const dia = ultimoDiaMesAnterior - i;
-            const dataStr = `${anoAnterior}-${String(mesAnterior+1).padStart(2,'0')}-${String(dia).padStart(2,'0')}`;
-            const temAtividade = !!atividadesPorData[dataStr];
-            html += `<div class="calendario-dia outro-mes ${temAtividade ? 'has-activity' : ''}"><div class="dia-numero">${dia}</div>${temAtividade ? `<div class="atividades-resumo">${atividadesPorData[dataStr]} atividade(s)</div>` : ''}</div>`;
-            contador++;
-        }
-        for (let dia = 1; dia <= ultimoDia; dia++) {
-            const dataStr = `${ano}-${String(mes+1).padStart(2,'0')}-${String(dia).padStart(2,'0')}`;
-            const temAtividade = !!atividadesPorData[dataStr];
-            html += `<div class="calendario-dia ${temAtividade ? 'has-activity' : ''}"><div class="dia-numero">${dia}</div>${temAtividade ? `<div class="atividades-resumo">${atividadesPorData[dataStr]} atividade(s)</div>` : ''}</div>`;
-            contador++;
-        }
-        const totalCelulas = 42;
-        const diasRestantes = totalCelulas - contador;
-        const proximoMes = mes === 11 ? 0 : mes + 1;
-        const anoProximo = mes === 11 ? ano + 1 : ano;
-        for (let dia = 1; dia <= diasRestantes; dia++) {
-            const dataStr = `${anoProximo}-${String(proximoMes+1).padStart(2,'0')}-${String(dia).padStart(2,'0')}`;
-            const temAtividade = !!atividadesPorData[dataStr];
-            html += `<div class="calendario-dia outro-mes ${temAtividade ? 'has-activity' : ''}"><div class="dia-numero">${dia}</div>${temAtividade ? `<div class="atividades-resumo">${atividadesPorData[dataStr]} atividade(s)</div>` : ''}</div>`;
-        }
-        grid.innerHTML = html;
-    }
-
-    function obterAtividadesPorData() {
-        const todas = [...atividadesEisenhower, ...tarefasRotineiras];
-        const mapa = {};
-        todas.forEach(item => { if (item.data) mapa[item.data] = (mapa[item.data] || 0) + 1; });
-        return mapa;
-    }
-
-    function mesAnterior() {
-        if (mesAtual === 0) { mesAtual = 11; anoAtual--; } else { mesAtual--; }
-        renderizarCalendario(mesAtual, anoAtual);
-    }
-    function proximoMes() {
-        if (mesAtual === 11) { mesAtual = 0; anoAtual++; } else { mesAtual++; }
-        renderizarCalendario(mesAtual, anoAtual);
-    }
-
-    // ==================== RELATÓRIO ====================
-    function renderizarRelatorio() {
-        const metricEisenTotal = document.getElementById('metric-eisen-total');
-        const metricEisenConcluidas = document.getElementById('metric-eisen-concluidas');
-        const metricEisenPendentes = document.getElementById('metric-eisen-pendentes');
-        const metricRotTotal = document.getElementById('metric-rot-total');
-        const metricRotConcluidas = document.getElementById('metric-rot-concluidas');
-        const metricRotPendentes = document.getElementById('metric-rot-pendentes');
-
-        if (metricEisenTotal) {
-            const total = atividadesEisenhower.length;
-            const concluidas = atividadesEisenhower.filter(i => i.concluida).length;
-            metricEisenTotal.innerText = `Total: ${total}`;
-            if (metricEisenConcluidas) metricEisenConcluidas.innerText = `Concluídas: ${concluidas}`;
-            if (metricEisenPendentes) metricEisenPendentes.innerText = `Pendentes: ${total - concluidas}`;
-        }
-        if (metricRotTotal) {
-            const total = tarefasRotineiras.length;
-            const concluidas = tarefasRotineiras.filter(i => i.concluida).length;
-            metricRotTotal.innerText = `Total: ${total}`;
-            if (metricRotConcluidas) metricRotConcluidas.innerText = `Concluídas: ${concluidas}`;
-            if (metricRotPendentes) metricRotPendentes.innerText = `Pendentes: ${total - concluidas}`;
-        }
-
-        const mesSelect = document.getElementById('mes-select');
-        if (mesSelect) {
-            const todasConcluidas = [
-                ...atividadesEisenhower.filter(i => i.concluida),
-                ...tarefasRotineiras.filter(i => i.concluida)
-            ];
-            const mesesSet = new Set();
-            todasConcluidas.forEach(i => { if (i.data) mesesSet.add(i.data.substring(0,7)); });
-            const meses = Array.from(mesesSet).sort();
-            mesSelect.innerHTML = meses.length ? meses.map(m => `<option value="${m}">${m}</option>`).join('') : '<option>Nenhum mês</option>';
-        }
-        atualizarGraficoPeriodo();
-    }
-
-    function atualizarGraficoPeriodo() {
-        const canvas = document.getElementById('grafico-periodo');
-        if (!canvas) return;
-        const periodo = document.getElementById('periodo-select').value;
-        const todasConcluidas = [
-            ...atividadesEisenhower.filter(i => i.concluida && i.data),
-            ...tarefasRotineiras.filter(i => i.concluida && i.data)
-        ].map(i => i.data);
-        if (todasConcluidas.length === 0) {
-            if (graficoPeriodo) graficoPeriodo.destroy();
-            return;
-        }
-        const grupos = {};
-        todasConcluidas.forEach(dataStr => {
-            const data = new Date(dataStr + 'T12:00:00');
-            let chave;
-            if (periodo === 'semanal') {
-                const semana = getWeekNumber(data);
-                chave = `${data.getFullYear()}-S${semana}`;
-            } else if (periodo === 'quinzenal') {
-                const quinzena = Math.floor((data.getDate()-1)/15)+1;
-                chave = `${data.getFullYear()}-${data.getMonth()+1}-Q${quinzena}`;
-            } else {
-                chave = `${data.getFullYear()}-${data.getMonth()+1}`;
-            }
-            grupos[chave] = (grupos[chave] || 0) + 1;
-        });
-        const labels = Object.keys(grupos).sort();
-        const valores = labels.map(l => grupos[l]);
-        const ctx = canvas.getContext('2d');
-        if (graficoPeriodo) graficoPeriodo.destroy();
-        graficoPeriodo = new Chart(ctx, {
-            type: 'bar',
-            data: { labels, datasets: [{ label: 'Concluídas', data: valores, backgroundColor: '#4361ee' }] },
-            options: { responsive: true, maintainAspectRatio: false }
-        });
-    }
-
-    function getWeekNumber(d) {
-        d = new Date(Date.UTC(d.getFullYear(), d.getMonth(), d.getDate()));
-        d.setUTCDate(d.getUTCDate() + 4 - (d.getUTCDay()||7));
-        const yearStart = new Date(Date.UTC(d.getUTCFullYear(),0,1));
-        return Math.ceil(( ( (d - yearStart) / 86400000) + 1)/7);
-    }
-
-    function atualizarDetalhamentoMensal() {
-        const mesAno = document.getElementById('mes-select').value;
-        if (!mesAno) return;
-        const [ano, mes] = mesAno.split('-');
-        const concluidas = [
-            ...atividadesEisenhower.filter(i => i.concluida && i.data),
-            ...tarefasRotineiras.filter(i => i.concluida && i.data)
-        ].filter(i => {
-            const [a, m] = i.data.split('-');
-            return a === ano && m === mes;
-        });
-        let html = `<p>Total no mês: ${concluidas.length}</p>`;
-        if (concluidas.length > 0) {
-            html += '<table><tr><th>Data</th><th>Tipo</th><th>Título</th></tr>';
-            concluidas.sort((a,b) => a.data.localeCompare(b.data)).forEach(i => {
-                html += `<tr><td>${formatarData(i.data)}</td><td>${i.tipo ? i.tipo : (i.quadrante ? 'Planejamento' : 'Rotina')}</td><td>${i.titulo}</td></tr>`;
-            });
-            html += '</table>';
-        }
-        document.getElementById('detalhamento-mensal').innerHTML = html;
-    }
-
-    // ==================== ORÇAMENTOS ====================
+    // Funções de orçamento (adaptadas)
     function iniciarNovoOrcamento() {
+        if (!usuarioAtual && modoVisualizacao !== 'equipe') return alert('Selecione um usuário primeiro!');
+        if (modoVisualizacao === 'equipe') return alert('Desative o modo Equipe para adicionar dados individuais.');
+
         const descricao = document.getElementById('orc-descricao').value.trim();
         const dataPedido = document.getElementById('orc-data-pedido').value;
         const dataAtividade = document.getElementById('orc-data-atividade').value;
@@ -1205,12 +1050,12 @@
             dataAtividade: orcamentoAtual.dataAtividade,
             itens: orcamentoAtual.itens
         };
-        orcamentos.push(novoOrcamento);
+        dadosPorUsuario[usuarioAtual].orcamentos.push(novoOrcamento);
         salvarDados();
         orcamentoAtual = null;
         document.getElementById('orcamento-em-andamento').style.display = 'none';
         document.getElementById('novo-orcamento-form').style.display = 'block';
-        renderizarOrcamentos();
+        renderizarTudo();
     }
 
     function cancelarOrcamento() {
@@ -1220,16 +1065,256 @@
     }
 
     function removerOrcamento(id) {
+        if (modoVisualizacao === 'equipe') return alert('Não é possível excluir no modo Equipe.');
+
         if (confirm('Tem certeza que deseja excluir este orçamento?')) {
-            orcamentos = orcamentos.filter(o => o.id != id);
+            dadosPorUsuario[usuarioAtual].orcamentos = dadosPorUsuario[usuarioAtual].orcamentos.filter(o => o.id != id);
             salvarDados();
-            renderizarOrcamentos();
+            renderizarTudo();
         }
+    }
+
+    // Funções de interface do usuário
+    function confirmarUsuario() {
+        const select = document.getElementById('usuario-select');
+        usuarioAtual = select.value;
+        modoVisualizacao = 'usuario';
+        document.getElementById('user-status').innerText = `Usuário ativo: ${usuarioAtual === 'carlos' ? 'Carlos' : 'Suellem'}`;
+        renderizarTudo();
+    }
+
+    function acessarInfoUsuario() {
+        if (!usuarioAtual) return alert('Selecione e confirme um usuário primeiro!');
+        modoVisualizacao = 'usuario';
+        renderizarTudo();
+    }
+
+    function visualizarEquipe() {
+        if (!usuarioAtual) return alert('Selecione e confirme um usuário primeiro!');
+        modoVisualizacao = 'equipe';
+        renderizarTudo();
+    }
+
+    // Funções de renderização (adaptadas para usar os getters)
+    function renderizarEisenhower() {
+        const container = document.getElementById('eisen-quadrantes');
+        if (!container) return;
+        const quadrantes = [
+            { key: 'Urgente e Importante (Fazer agora)', titulo: '🔴 Urgente e Importante', cor: '#dc3545' },
+            { key: 'Importante, mas não Urgente (Agendar)', titulo: '🟡 Importante, não Urgente', cor: '#ffc107' },
+            { key: 'Urgente, mas não Importante (Delegar)', titulo: '🟠 Urgente, não Importante', cor: '#fd7e14' },
+            { key: 'Nem Urgente nem Importante (Eliminar)', titulo: '🔵 Nem Urgente nem Importante', cor: '#17a2b8' }
+        ];
+        const atividades = getAtividadesEisenhower();
+        let html = '';
+        quadrantes.forEach(q => {
+            const itens = atividades.filter(i => i.quadrante === q.key);
+            html += `<div class="quadrante" style="border-left-color: ${q.cor};">`;
+            html += `<h3>${q.titulo}</h3>`;
+            itens.forEach(item => {
+                html += `<div class="atividade-item">`;
+                if (modoVisualizacao === 'usuario') {
+                    html += `<button class="delete-btn" onclick="excluirEisenhower(${item.id})">🗑️</button>`;
+                }
+                html += `<label class="check-label">`;
+                html += `<input type="checkbox" ${item.concluida ? 'checked' : ''} ${modoVisualizacao === 'equipe' ? 'disabled' : ''} onchange="toggleEisenhower(${item.id})">`;
+                html += `<strong>${item.titulo}</strong>`;
+                html += `</label>`;
+                if (modoVisualizacao === 'equipe' && item.usuario) {
+                    html += `<span class="usuario-badge">${item.usuario}</span>`;
+                }
+                html += `<div class="data-info">${formatarData(item.data)}</div>`;
+                if (item.descricao) {
+                    html += `<div class="popover">📝 ${item.descricao}</div>`;
+                }
+                html += `</div>`;
+            });
+            if (itens.length === 0) html += `<p style="color:#999;">Nenhuma atividade</p>`;
+            html += `</div>`;
+        });
+        container.innerHTML = html;
+    }
+
+    function renderizarRotineiras() {
+        const lista = document.getElementById('rotineiras-lista');
+        if (!lista) return;
+        const tarefas = getTarefasRotineiras();
+        if (tarefas.length === 0) {
+            lista.innerHTML = '<p>Nenhuma tarefa cadastrada.</p>';
+            return;
+        }
+        const ordenadas = [...tarefas].sort((a,b) => a.data.localeCompare(b.data));
+        let html = '';
+        ordenadas.forEach(item => {
+            html += `<div class="tarefa-item">`;
+            if (modoVisualizacao === 'usuario') {
+                html += `<button class="delete-btn" onclick="excluirRotineira(${item.id})">🗑️</button>`;
+            }
+            html += `<input type="checkbox" ${item.concluida ? 'checked' : ''} ${modoVisualizacao === 'equipe' ? 'disabled' : ''} onchange="toggleRotineira(${item.id})">`;
+            html += `<div class="detalhes"><strong>${item.titulo}</strong>`;
+            if (modoVisualizacao === 'equipe' && item.usuario) {
+                html += ` <span class="usuario-badge">${item.usuario}</span>`;
+            }
+            if (item.descricao) html += `<br><small>${item.descricao}</small>`;
+            html += `</div>`;
+            html += `<div class="data">${formatarData(item.data)}</div>`;
+            html += `</div>`;
+        });
+        lista.innerHTML = html;
+    }
+
+    function renderizarAgenda() {
+        const lista = document.getElementById('agenda-lista');
+        if (!lista) return;
+        const atividadesEisen = getAtividadesEisenhower();
+        const tarefasRot = getTarefasRotineiras();
+
+        const pendentes = [
+            ...atividadesEisen.filter(i => !i.concluida).map(i => ({ ...i, tipo: 'Planejamento' })),
+            ...tarefasRot.filter(i => !i.concluida).map(i => ({ ...i, tipo: 'Rotina' }))
+        ].sort((a,b) => a.data.localeCompare(b.data));
+
+        if (pendentes.length === 0) {
+            lista.innerHTML = '<p>Nenhuma atividade pendente.</p>';
+            return;
+        }
+        let html = '<table style="width:100%; border-collapse: collapse;"><tr><th>Data</th><th>Tipo</th><th>Título</th><th>Descrição</th>';
+        if (modoVisualizacao === 'equipe') html += '<th>Usuário</th>';
+        html += '</tr>';
+        pendentes.forEach(item => {
+            html += `<tr><td>${formatarData(item.data)}</td><td>${item.tipo}</td><td>${item.titulo}</td><td>${item.descricao || ''}</td>`;
+            if (modoVisualizacao === 'equipe') html += `<td>${item.usuario || ''}</td>`;
+            html += `</tr>`;
+        });
+        html += '</table>';
+        lista.innerHTML = html;
+    }
+
+    function renderizarRelatorio() {
+        const atividadesEisen = getAtividadesEisenhower();
+        const tarefasRot = getTarefasRotineiras();
+
+        const metricEisenTotal = document.getElementById('metric-eisen-total');
+        const metricEisenConcluidas = document.getElementById('metric-eisen-concluidas');
+        const metricEisenPendentes = document.getElementById('metric-eisen-pendentes');
+        const metricRotTotal = document.getElementById('metric-rot-total');
+        const metricRotConcluidas = document.getElementById('metric-rot-concluidas');
+        const metricRotPendentes = document.getElementById('metric-rot-pendentes');
+
+        if (metricEisenTotal) {
+            const total = atividadesEisen.length;
+            const concluidas = atividadesEisen.filter(i => i.concluida).length;
+            metricEisenTotal.innerText = `Total: ${total}`;
+            if (metricEisenConcluidas) metricEisenConcluidas.innerText = `Concluídas: ${concluidas}`;
+            if (metricEisenPendentes) metricEisenPendentes.innerText = `Pendentes: ${total - concluidas}`;
+        }
+        if (metricRotTotal) {
+            const total = tarefasRot.length;
+            const concluidas = tarefasRot.filter(i => i.concluida).length;
+            metricRotTotal.innerText = `Total: ${total}`;
+            if (metricRotConcluidas) metricRotConcluidas.innerText = `Concluídas: ${concluidas}`;
+            if (metricRotPendentes) metricRotPendentes.innerText = `Pendentes: ${total - concluidas}`;
+        }
+
+        const mesSelect = document.getElementById('mes-select');
+        if (mesSelect) {
+            const todasConcluidas = [
+                ...atividadesEisen.filter(i => i.concluida),
+                ...tarefasRot.filter(i => i.concluida)
+            ];
+            const mesesSet = new Set();
+            todasConcluidas.forEach(i => { if (i.data) mesesSet.add(i.data.substring(0,7)); });
+            const meses = Array.from(mesesSet).sort();
+            mesSelect.innerHTML = meses.length ? meses.map(m => `<option value="${m}">${m}</option>`).join('') : '<option>Nenhum mês</option>';
+        }
+        atualizarGraficoPeriodo();
+    }
+
+    function atualizarGraficoPeriodo() {
+        const canvas = document.getElementById('grafico-periodo');
+        if (!canvas) return;
+        const periodo = document.getElementById('periodo-select').value;
+        const atividadesEisen = getAtividadesEisenhower();
+        const tarefasRot = getTarefasRotineiras();
+        const todasConcluidas = [
+            ...atividadesEisen.filter(i => i.concluida && i.data),
+            ...tarefasRot.filter(i => i.concluida && i.data)
+        ].map(i => i.data);
+
+        if (todasConcluidas.length === 0) {
+            if (graficoPeriodo) graficoPeriodo.destroy();
+            return;
+        }
+
+        const grupos = {};
+        todasConcluidas.forEach(dataStr => {
+            const data = new Date(dataStr + 'T12:00:00');
+            let chave;
+            if (periodo === 'semanal') {
+                const semana = getWeekNumber(data);
+                chave = `${data.getFullYear()}-S${semana}`;
+            } else if (periodo === 'quinzenal') {
+                const quinzena = Math.floor((data.getDate()-1)/15)+1;
+                chave = `${data.getFullYear()}-${data.getMonth()+1}-Q${quinzena}`;
+            } else {
+                chave = `${data.getFullYear()}-${data.getMonth()+1}`;
+            }
+            grupos[chave] = (grupos[chave] || 0) + 1;
+        });
+
+        const labels = Object.keys(grupos).sort();
+        const valores = labels.map(l => grupos[l]);
+
+        const ctx = canvas.getContext('2d');
+        if (graficoPeriodo) graficoPeriodo.destroy();
+        graficoPeriodo = new Chart(ctx, {
+            type: 'bar',
+            data: { labels, datasets: [{ label: 'Concluídas', data: valores, backgroundColor: '#4361ee' }] },
+            options: { responsive: true, maintainAspectRatio: false }
+        });
+    }
+
+    function getWeekNumber(d) {
+        d = new Date(Date.UTC(d.getFullYear(), d.getMonth(), d.getDate()));
+        d.setUTCDate(d.getUTCDate() + 4 - (d.getUTCDay()||7));
+        const yearStart = new Date(Date.UTC(d.getUTCFullYear(),0,1));
+        return Math.ceil(( ( (d - yearStart) / 86400000) + 1)/7);
+    }
+
+    function atualizarDetalhamentoMensal() {
+        const mesAno = document.getElementById('mes-select').value;
+        if (!mesAno) return;
+        const [ano, mes] = mesAno.split('-');
+        const atividadesEisen = getAtividadesEisenhower();
+        const tarefasRot = getTarefasRotineiras();
+        const concluidas = [
+            ...atividadesEisen.filter(i => i.concluida && i.data),
+            ...tarefasRot.filter(i => i.concluida && i.data)
+        ].filter(i => {
+            const [a, m] = i.data.split('-');
+            return a === ano && m === mes;
+        });
+
+        let html = `<p>Total no mês: ${concluidas.length}</p>`;
+        if (concluidas.length > 0) {
+            html += '<table><tr><th>Data</th><th>Tipo</th><th>Título</th>';
+            if (modoVisualizacao === 'equipe') html += '<th>Usuário</th>';
+            html += '</tr>';
+            concluidas.sort((a,b) => a.data.localeCompare(b.data)).forEach(i => {
+                html += `<tr><td>${formatarData(i.data)}</td><td>${i.tipo ? i.tipo : (i.quadrante ? 'Planejamento' : 'Rotina')}</td><td>${i.titulo}</td>`;
+                if (modoVisualizacao === 'equipe') html += `<td>${i.usuario || ''}</td>`;
+                html += `</tr>`;
+            });
+            html += '</table>';
+        }
+        document.getElementById('detalhamento-mensal').innerHTML = html;
     }
 
     function renderizarOrcamentos() {
         const lista = document.getElementById('orcamentos-lista');
         if (!lista) return;
+        const orcamentos = getOrcamentos();
+
         if (orcamentos.length === 0) {
             lista.innerHTML = '<p>Nenhum orçamento cadastrado.</p>';
         } else {
@@ -1238,8 +1323,13 @@
             ordenados.forEach(orc => {
                 const totalOrc = orc.itens.reduce((acc, i) => acc + i.total, 0);
                 html += `<div class="orcamento-item">`;
-                html += `<div class="orcamento-header"><h3>${orc.descricao}</h3><span class="total">Total: R$ ${totalOrc.toFixed(2)}</span>`;
-                html += `<button class="btn-small" onclick="removerOrcamento(${orc.id})">🗑️ Excluir</button></div>`;
+                html += `<div class="orcamento-header"><h3>${orc.descricao}`;
+                if (modoVisualizacao === 'equipe' && orc.usuario) html += ` <span class="usuario-badge">${orc.usuario}</span>`;
+                html += `</h3><span class="total">Total: R$ ${totalOrc.toFixed(2)}</span>`;
+                if (modoVisualizacao === 'usuario') {
+                    html += `<button class="btn-small" onclick="removerOrcamento(${orc.id})">🗑️ Excluir</button>`;
+                }
+                html += `</div>`;
                 html += `<p><strong>Data do pedido:</strong> ${formatarData(orc.dataPedido)} | <strong>Data da atividade:</strong> ${formatarData(orc.dataAtividade)}</p>`;
                 if (orc.itens.length > 0) {
                     html += '<table class="itens-table"><tr><th>Tipo</th><th>Valor unit.</th><th>Qtd</th><th>Total</th></tr>';
@@ -1275,85 +1365,27 @@
         }
     }
 
-    // ==================== RELATOS (MODIFICADO) ====================
-    function adicionarRelato() {
-        const atividade = document.getElementById('rel-atividade').value.trim();
-        const objetivo = document.getElementById('rel-objetivo').value.trim();
-        if (!atividade) return alert('Campo Atividade é obrigatório');
-        if (!objetivo) return alert('Objetivo é obrigatório');
-        const data = document.getElementById('rel-data').value;
-        const povo = document.getElementById('rel-povo').value;
-        const pessoas = document.getElementById('rel-pessoas').value;
-        const alcancado = document.getElementById('rel-alcancado').value;
-        const desafios = document.getElementById('rel-desafios').value;
-        const pontos = document.getElementById('rel-pontos').value;
-
-        relatosAtividades.push({
-            id: Date.now() + Math.random(),
-            atividade,
-            objetivo,
-            data,
-            povo,
-            pessoas,
-            alcancado,
-            desafios,
-            pontos
-        });
-        salvarDados();
-        renderizarRelatos();
-        // Limpar campos
-        document.getElementById('rel-atividade').value = '';
-        document.getElementById('rel-objetivo').value = '';
-        document.getElementById('rel-povo').value = '';
-        document.getElementById('rel-pessoas').value = '';
-        document.getElementById('rel-desafios').value = '';
-        document.getElementById('rel-pontos').value = '';
-        document.getElementById('rel-data').value = hoje();
-    }
-
-    function removerRelato(id) {
-        if (confirm('Tem certeza que deseja excluir este relato?')) {
-            relatosAtividades = relatosAtividades.filter(i => i.id != id);
-            salvarDados();
-            renderizarRelatos();
-        }
-    }
-
-    function copiarRelato(id) {
-        const relato = relatosAtividades.find(i => i.id == id);
-        if (!relato) return;
-
-        const texto = `Atividade: ${relato.atividade}
-Objetivo: ${relato.objetivo}
-Data: ${formatarData(relato.data)}
-Povo: ${relato.povo}
-Pessoas: ${relato.pessoas}
-Alcançado: ${relato.alcancado}
-Desafios: ${relato.desafios || ''}
-Pontos importantes: ${relato.pontos || ''}`;
-
-        navigator.clipboard.writeText(texto).then(() => {
-            alert('Relato copiado para a área de transferência!');
-        }).catch(() => {
-            alert('Erro ao copiar. Tente novamente.');
-        });
-    }
-
     function renderizarRelatos() {
         const lista = document.getElementById('relatos-lista');
         if (!lista) return;
-        if (relatosAtividades.length === 0) {
+        const relatos = getRelatos();
+
+        if (relatos.length === 0) {
             lista.innerHTML = '<p>Nenhum relato cadastrado.</p>';
             return;
         }
         let html = '';
-        relatosAtividades.sort((a,b) => b.data.localeCompare(a.data)).forEach(rel => {
+        relatos.sort((a,b) => b.data.localeCompare(a.data)).forEach(rel => {
             html += `<div class="relato-item">`;
             html += `<div class="relato-header">`;
-            html += `<h4>${rel.atividade} - ${rel.objetivo}</h4>`;
+            html += `<h4>${rel.atividade} - ${rel.objetivo}`;
+            if (modoVisualizacao === 'equipe' && rel.usuario) html += ` <span class="usuario-badge">${rel.usuario}</span>`;
+            html += `</h4>`;
             html += `<div>`;
             html += `<button class="copy-btn" onclick="copiarRelato(${rel.id})"><i class="fas fa-copy"></i> Copiar</button>`;
-            html += `<button class="btn-small" onclick="removerRelato(${rel.id})" style="margin-left:5px;">🗑️</button>`;
+            if (modoVisualizacao === 'usuario') {
+                html += `<button class="btn-small" onclick="removerRelato(${rel.id})" style="margin-left:5px;">🗑️</button>`;
+            }
             html += `</div>`;
             html += `</div>`;
             html += `<p><strong>Data:</strong> ${formatarData(rel.data)} | <strong>Povo:</strong> ${rel.povo} | <strong>Pessoas:</strong> ${rel.pessoas}</p>`;
@@ -1365,11 +1397,181 @@ Pontos importantes: ${relato.pontos || ''}`;
         lista.innerHTML = html;
     }
 
-    // Utilitário de formatação de data
+    function copiarRelato(id) {
+        const relatos = getRelatos();
+        const relato = relatos.find(i => i.id == id);
+        if (!relato) return;
+
+        let texto = `Atividade: ${relato.atividade}\nObjetivo: ${relato.objetivo}\nData: ${formatarData(relato.data)}\nPovo: ${relato.povo}\nPessoas: ${relato.pessoas}\nAlcançado: ${relato.alcancado}`;
+        if (relato.desafios) texto += `\nDesafios: ${relato.desafios}`;
+        if (relato.pontos) texto += `\nPontos importantes: ${relato.pontos}`;
+        if (modoVisualizacao === 'equipe' && relato.usuario) texto += `\nUsuário: ${relato.usuario}`;
+
+        navigator.clipboard.writeText(texto).then(() => {
+            alert('Relato copiado para a área de transferência!');
+        }).catch(() => {
+            alert('Erro ao copiar. Tente novamente.');
+        });
+    }
+
+    function renderizarCalendario(mes, ano) {
+        const grid = document.getElementById('calendario-grid');
+        const titulo = document.getElementById('mes-ano-titulo');
+        if (!grid || !titulo) return;
+        const meses = ['Janeiro','Fevereiro','Março','Abril','Maio','Junho','Julho','Agosto','Setembro','Outubro','Novembro','Dezembro'];
+        titulo.innerText = `${meses[mes]} ${ano}`;
+        const diasSemana = ['Dom','Seg','Ter','Qua','Qui','Sex','Sáb'];
+        let html = '';
+        diasSemana.forEach(dia => html += `<div class="calendario-dia-semana">${dia}</div>`);
+
+        const primeiroDia = new Date(ano, mes, 1);
+        const diaSemanaInicio = primeiroDia.getDay();
+        const ultimoDia = new Date(ano, mes + 1, 0).getDate();
+        const mesAnterior = mes === 0 ? 11 : mes - 1;
+        const anoAnterior = mes === 0 ? ano - 1 : ano;
+        const ultimoDiaMesAnterior = new Date(anoAnterior, mesAnterior + 1, 0).getDate();
+        const atividadesPorData = obterAtividadesPorData();
+
+        let contador = 0;
+        for (let i = diaSemanaInicio - 1; i >= 0; i--) {
+            const dia = ultimoDiaMesAnterior - i;
+            const dataStr = `${anoAnterior}-${String(mesAnterior+1).padStart(2,'0')}-${String(dia).padStart(2,'0')}`;
+            const temAtividade = !!atividadesPorData[dataStr];
+            html += `<div class="calendario-dia outro-mes ${temAtividade ? 'has-activity' : ''}"><div class="dia-numero">${dia}</div>${temAtividade ? `<div class="atividades-resumo">${atividadesPorData[dataStr]} atividade(s)</div>` : ''}</div>`;
+            contador++;
+        }
+        for (let dia = 1; dia <= ultimoDia; dia++) {
+            const dataStr = `${ano}-${String(mes+1).padStart(2,'0')}-${String(dia).padStart(2,'0')}`;
+            const temAtividade = !!atividadesPorData[dataStr];
+            html += `<div class="calendario-dia ${temAtividade ? 'has-activity' : ''}"><div class="dia-numero">${dia}</div>${temAtividade ? `<div class="atividades-resumo">${atividadesPorData[dataStr]} atividade(s)</div>` : ''}</div>`;
+            contador++;
+        }
+        const totalCelulas = 42;
+        const diasRestantes = totalCelulas - contador;
+        const proximoMes = mes === 11 ? 0 : mes + 1;
+        const anoProximo = mes === 11 ? ano + 1 : ano;
+        for (let dia = 1; dia <= diasRestantes; dia++) {
+            const dataStr = `${anoProximo}-${String(proximoMes+1).padStart(2,'0')}-${String(dia).padStart(2,'0')}`;
+            const temAtividade = !!atividadesPorData[dataStr];
+            html += `<div class="calendario-dia outro-mes ${temAtividade ? 'has-activity' : ''}"><div class="dia-numero">${dia}</div>${temAtividade ? `<div class="atividades-resumo">${atividadesPorData[dataStr]} atividade(s)</div>` : ''}</div>`;
+        }
+        grid.innerHTML = html;
+    }
+
+    function obterAtividadesPorData() {
+        const atividades = getAtividadesEisenhower();
+        const tarefas = getTarefasRotineiras();
+        const todas = [...atividades, ...tarefas];
+        const mapa = {};
+        todas.forEach(item => { if (item.data) mapa[item.data] = (mapa[item.data] || 0) + 1; });
+        return mapa;
+    }
+
+    function mesAnterior() {
+        if (mesAtual === 0) { mesAtual = 11; anoAtual--; } else { mesAtual--; }
+        renderizarCalendario(mesAtual, anoAtual);
+    }
+    function proximoMes() {
+        if (mesAtual === 11) { mesAtual = 0; anoAtual++; } else { mesAtual++; }
+        renderizarCalendario(mesAtual, anoAtual);
+    }
+
+    function renderizarTudo() {
+        renderizarEisenhower();
+        renderizarRotineiras();
+        renderizarAgenda();
+        renderizarRelatorio();
+        renderizarOrcamentos();
+        renderizarRelatos();
+        renderizarCalendario(mesAtual, anoAtual);
+    }
+
+    function exportarDados() {
+        const dados = dadosPorUsuario;
+        const blob = new Blob([JSON.stringify(dados, null, 2)], { type: 'application/json' });
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = `dashboard_${hoje()}.json`;
+        a.click();
+        URL.revokeObjectURL(url);
+    }
+
+    function importarDados(event) {
+        const file = event.target.files[0];
+        if (!file) return;
+
+        const reader = new FileReader();
+        reader.onload = function(e) {
+            try {
+                const dados = JSON.parse(e.target.result);
+                if (dados.carlos && dados.suellem) {
+                    dadosPorUsuario = dados;
+                    salvarDados();
+                    renderizarTudo();
+                    alert('Dados importados com sucesso!');
+                } else {
+                    alert('Arquivo inválido: formato não reconhecido.');
+                }
+            } catch (err) {
+                alert('Erro ao importar: arquivo inválido.');
+            }
+        };
+        reader.readAsText(file);
+        event.target.value = '';
+    }
+
     function formatarData(dataStr) {
         if (!dataStr) return '';
         const [ano, mes, dia] = dataStr.split('-');
         return `${dia}/${mes}/${ano}`;
+    }
+
+    window.addEventListener('load', function() {
+        carregarDados();
+        const idsData = ['eisen-data', 'rot-data', 'rel-data', 'orc-data-pedido', 'orc-data-atividade'];
+        idsData.forEach(id => {
+            const el = document.getElementById(id);
+            if (el) el.value = hoje();
+        });
+
+        try {
+            // Inicializa sem usuário selecionado
+            document.getElementById('user-status').innerText = 'Nenhum usuário ativo';
+            renderizarTudo();
+        } catch (e) {
+            console.error("Erro na renderização inicial", e);
+        }
+
+        configurarAbas();
+
+        const itemTipo = document.getElementById('item-tipo');
+        if (itemTipo) {
+            itemTipo.addEventListener('change', function() {
+                const grupo = document.getElementById('item-outro-group');
+                if (grupo) grupo.style.display = this.value === 'Outro' ? 'block' : 'none';
+            });
+        }
+    });
+
+    function configurarAbas() {
+        const botoes = document.querySelectorAll('.tab-button');
+        botoes.forEach(btn => {
+            btn.addEventListener('click', function(e) {
+                const tabId = this.getAttribute('data-tab');
+                document.querySelectorAll('.tab-button').forEach(b => b.classList.remove('active'));
+                this.classList.add('active');
+                document.querySelectorAll('.tab-pane').forEach(p => p.classList.remove('active'));
+                const alvo = document.getElementById(tabId);
+                if (alvo) alvo.classList.add('active');
+
+                if (tabId === 'tab3') {
+                    renderizarCalendario(mesAtual, anoAtual);
+                } else if (tabId === 'tab5') {
+                    renderizarOrcamentos();
+                }
+            });
+        });
     }
 </script>
 </body>
